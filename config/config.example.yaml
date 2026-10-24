@@ -6,7 +6,7 @@ risk:
   max_daily_loss_pct: 5.0
   max_position_value_pct: 100.0
   kill_switch_on_start: false
-  cooldown_bars: 1
+  cooldown_bars: 3
 telegram:
   enabled: false
   notify_open: true
@@ -17,7 +17,14 @@ manual:
   sizing: Stoprisiko
   risk_pct: 1.0
   capital_pct: 10.0
-  legs: 1
+  legs: 1               # fixiert: nur 1 Entry-Leg wird unterstuetzt
+  entry_mode: Market    # fixiert: nur Market wird unterstuetzt
+  tp_weights: [30, 25, 15, 10]
+  fee_pct: 0.05
+  be_r: 1.0
+  trail_r: 1.0
+  osc_mode: Aus
+  osc_exit_after: Nach TP1
   pivot_len: 5
   osc_low: 20
   osc_high: 80
@@ -30,6 +37,13 @@ symbols:
     order_mode: bot_managed
     enabled: true
   - exchange: aster
+    symbol: BTC/USDT:USDT
+    asset_preset: BTC
+    timeframe: 1h
+    leverage: 10
+    order_mode: exchange_native
+    enabled: false
+  - exchange: binance
     symbol: BTC/USDT:USDT
     asset_preset: BTC
     timeframe: 1h

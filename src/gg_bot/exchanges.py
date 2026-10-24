@@ -1,4 +1,4 @@
-"""CCXT factory for hyperliquid + aster (perps). Paper mode works keyless (public market data)."""
+"""CCXT factory for hyperliquid + aster + binance (perps). Paper mode works keyless."""
 from __future__ import annotations
 import os
 
@@ -27,7 +27,42 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
         if testnet:
             ex.set_sandbox_mode(True)
         return ex
+    if name == "binance":
+        key = os.getenv("BINANCE_API_KEY", ""); sec = os.getenv("BINANCE_API_SECRET", "")
+        params = {"options": {"defaultType": "swap"}}
+        if key and sec:
+            params.update({"apiKey": key, "secret": sec})
+        elif need_auth:
+            raise RuntimeError("BINANCE_API_KEY / BINANCE_API_SECRET missing in .env")
+        ex = ccxt.binanceusdm(params)
+        if testnet:
+            ex.set_sandbox_mode(True)
+        return ex
     raise ValueError(f"unknown exchange {name}")
+
+def set_leverage(ex, symbol: str, leverage: int) -> bool:
+    """Push account leverage for symbol. Returns True if accepted."""
+    try:
+        ex.set_leverage(leverage, symbol)
+        return True
+    except Exception:
+        try:
+            ex.set_leverage(leverage, symbol, {"marginMode": "cross"})
+            return True
+        except Exception:
+            return False
+
+def fetch_position_qty(ex, symbol: str) -> float:
+    """Signed open contracts for symbol (0 when flat). Never raises."""
+    try:
+        for p in ex.fetch_positions([symbol]):
+            if p.get("symbol") == symbol or symbol in str(p.get("symbol")):
+                amt = float(p.get("contracts") or 0)
+                if amt:
+                    return amt if p.get("side") == "long" else -amt
+    except Exception:
+        pass
+    return 0.0
 
 def market_limits(ex, symbol: str) -> dict:
     ex.load_markets()

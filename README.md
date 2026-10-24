@@ -1,6 +1,6 @@
 # GG-Shot Ultimate v6 Bot
 
-Live-Trading-Bot (Python 3.13, CCXT) fuer Hyperliquid + Aster Perps. Multi-Asset parallel, Voll-CLI, Docker 24/7.
+Live-Trading-Bot (Python 3.13, CCXT) fuer Hyperliquid + Aster + Binance (USDT-M) Perps. Multi-Asset parallel, Voll-CLI, Docker 24/7.
 
 > WARNUNG: `mode: live` handelt mit echtem Geld. Starte immer mit `mode: paper`, dann `config-validate`,
 > dann genau ein Symbol mit Min-Size. `kill-engage` und `positions-close-all` sind deine Not-Aus.
@@ -34,3 +34,11 @@ Live-Trading-Bot (Python 3.13, CCXT) fuer Hyperliquid + Aster Perps. Multi-Asset
 ## Strategie-Paritaet
 `config/presets.json` = 1:1-Transkript der Pine-Tabellen (`f_cfg_signal/filter/tp_sl/trail`, 78 Keys + `_finetune_overrides` + `_defaults_*`).
 Engine: closed-bar Signale, Trendlinie/Breakout, ATR/RSI/Volumen-Filter, Pyramiding/Cooldown, Stoprisiko/Marginbudget-Sizing, 4 TP-Tranchen, BE/Trailing-Trigger, Oszillator-Exit. Order-Modi pro Symbol: `bot_managed` oder `exchange_native`.
+
+## Ausfuehrungs-Engine (ergaenzt nach Review)
+- **Hebel:** wird beim Start pro Symbol per `set_leverage` an die Boerse gepusht. Schlaegt das fehl, ist das Symbol fail-safe blockiert (kein Trading mit falschem Account-Hebel).
+- **Equity:** aus der Settlement-Waehrung des Symbols (z. B. USDC bei Hyperliquid). Kein Rueckfall auf 10000 im Live-Modus: ohne Guthaben wird das Symbol mit klarem Fehler blockiert.
+- **Positionsschutz:** kein Entry bei offener/verwaister Position; Cooldown in Kerzen nach Close; Kill-Switch blockiert Entries und schliesst live alles.
+- **Exits:** `bot_managed` ueberwacht SL/TP1-4/BE/Trailing/Opposite/Oszillator aktiv; `exchange_native` legt volles Bracket (SL + alle TP-Tranchen, gewichtet) und zieht den Boersen-SL bei BE/Trailing nach. Paper tradet die gleiche Logik simuliert.
+- **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
+- **Presets:** 78 Keys (26 Assets x 3 Timeframes) + Finetune-Overrides. Tages-PnL setzt sich bei Neustart zurueck (Limit gilt pro Laufzeit).

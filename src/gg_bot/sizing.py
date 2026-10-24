@@ -6,7 +6,6 @@ def plan_qty(equity: float, avg_plan: float, point_value: float, sizing: str,
              risk_pct: float, capital_pct: float, leverage: float, exposure_cap_pct: float,
              stop_dist_per_unit: float, weights: list[float], legs: int, tp_count: int,
              lot: float) -> tuple[list[float], float, float, str]:
-    """Returns (qty_per_leg, total_lots_value_qty, max_position_value, error)."""
     if equity <= 0 or avg_plan <= 0:
         return [], 0.0, 0.0, "equity/price invalid"
     max_position_value = equity * min(exposure_cap_pct / 100.0, leverage)
@@ -33,3 +32,21 @@ def plan_qty(equity: float, avg_plan: float, point_value: float, sizing: str,
             per_leg_lots.append(alloc)
             lots_left -= alloc
     return [x * lot for x in per_leg_lots], total_qty, max_position_value, ""
+
+def split_tp_qty(total_qty: float, weights: list[float], tp_count: int, lot: float) -> list[float]:
+    """Split whole position across TP tranches by weight (floor + remainder to last)."""
+    w = weights[:tp_count]
+    wsum = sum(w)
+    total_lots = int(math.floor(total_qty / lot + 1e-9))
+    if total_lots < tp_count:
+        raise ValueError("qty below tranche minimum")
+    out_lots, left = [], total_lots
+    for j in range(tp_count):
+        if j == tp_count - 1:
+            out_lots.append(left)
+        else:
+            q = max(1, int(math.floor(total_lots * w[j] / wsum)))
+            q = min(q, left - (tp_count - j - 1))
+            out_lots.append(q)
+            left -= q
+    return [x * lot for x in out_lots]

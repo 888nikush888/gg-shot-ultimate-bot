@@ -1,4 +1,4 @@
-"""Order execution: bot-managed vs exchange-native, idempotent client IDs."""
+"""Order execution: entries, full TP/SL brackets, position close. Idempotent client IDs."""
 from __future__ import annotations
 from dataclasses import dataclass
 
@@ -7,8 +7,8 @@ class LegOrder:
     cycle: int
     leg: int
     qty: float
-    price: float | None  # None = market
-    side: str            # long | short
+    price: float | None
+    side: str
 
 def client_id(cycle: int, leg: int, tranche: int) -> str:
     return f"gg{cycle}L{leg}T{tranche}"
@@ -17,24 +17,44 @@ def place_entry(ex, symbol: str, side: str, qty: float, price: float | None, cid
     otype = "market" if price is None else "limit"
     return ex.create_order(symbol, otype, "buy" if side == "long" else "sell", qty, price, {"clientOrderId": cid})
 
-def place_stop_tp(ex, symbol: str, side: str, qty: float, stop: float | None, tp: float | None, cid: str, reduce_only: bool = True) -> list[dict]:
-    outs = []
-    params = {"reduceOnly": reduce_only, "clientOrderId": cid}
+def place_bracket(ex, symbol: str, side: str, total_qty: float, stop: float,
+                  tps: list[tuple[float, float]], cycle: int) -> list[dict]:
+    """SL (full qty, stopMarket reduceOnly) + one limit TP per tranche (reduceOnly)."""
     exit_side = "sell" if side == "long" else "buy"
-    if stop is not None:
-        outs.append(ex.create_order(symbol, "stopMarket", exit_side, qty, None, {**params, "stopPrice": stop}))
-    if tp is not None:
-        outs.append(ex.create_order(symbol, "limit", exit_side, qty, tp, params))
+    outs = [ex.create_order(symbol, "stopMarket", exit_side, total_qty, None,
+                            {"stopPrice": stop, "reduceOnly": True,
+                             "clientOrderId": client_id(cycle, 0, 8)})]
+    for j, (px, q) in enumerate(tps):
+        if q > 0:
+            outs.append(ex.create_order(symbol, "limit", exit_side, q, px,
+                                        {"reduceOnly": True, "clientOrderId": client_id(cycle, 0, j)}))
     return outs
 
-def close_all(ex, symbol: str, side: str | None = None) -> dict:
-    pos = ex.fetch_positions([symbol])
-    closed = []
-    for p in pos:
-        amt = float(p.get("contracts") or 0)
-        if amt > 0:
-            s = p.get("side")
-            if side and s != side:
-                continue
-            closed.append(ex.create_order(symbol, "market", "sell" if s == "long" or (side == "long") else "buy", amt, None, {"reduceOnly": True}))
-    return {"closed": len(closed)}
+def close_position(ex, symbol: str, side: str, qty: float, cid: str = "") -> dict | None:
+    if qty <= 0:
+        return None
+    params: dict = {"reduceOnly": True}
+    if cid:
+        params["clientOrderId"] = cid
+    return ex.create_order(symbol, "market", "sell" if side == "long" else "buy", qty, None, params)
+
+def close_all(ex, symbol: str) -> dict:
+    """Close every open position on symbol. Returns closed count + qtys."""
+    closed, qtys = 0, []
+    try:
+        positions = ex.fetch_positions([symbol])
+    except Exception:
+        positions = []
+    for p in positions:
+        amt = abs(float(p.get("contracts") or 0))
+        if amt <= 0:
+            continue
+        side = p.get("side") or ("long" if float(p.get("contracts") or 0) > 0 else "short")
+        try:
+            ex.create_order(symbol, "market", "sell" if side == "long" else "buy",
+                            amt, None, {"reduceOnly": True})
+            closed += 1
+            qtys.append(amt)
+        except Exception:
+            continue
+    return {"closed": closed, "qty": qtys}
