@@ -11,6 +11,13 @@ class SymbolCfg(BaseModel):
     asset_preset: str = "BTC"   # Pine Asset Preset name
     timeframe: Literal["15m", "30m", "1h"] = "1h"
     leverage: int = 10
+
+    @field_validator("leverage")
+    @classmethod
+    def _lev(cls, v):
+        if not 1 <= v <= 50:
+            raise ValueError("leverage muss 1-50 sein")
+        return v
     order_mode: Literal["bot_managed", "exchange_native"] = "bot_managed"
     enabled: bool = True
 

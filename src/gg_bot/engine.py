@@ -19,13 +19,17 @@ TF_MINUTES = {"15m": 15, "30m": 30, "1h": 60}
 DEFAULT_TP_WEIGHTS = [30.0, 25.0, 15.0, 10.0]
 
 def settle_currency(symbol: str) -> str:
-    return symbol.split(":")[1] if ":" in symbol else symbol.split("/")[1]
+    head, _, tail = symbol.partition(":")
+    if tail:
+        return tail
+    parts = head.split("/")
+    return parts[1] if len(parts) > 1 else ""
 
 def get_equity(ex, symbol: str, mode: str) -> float:
     if mode != "live":
         return 10000.0
     bal = ex.fetch_balance().get("total", {}) or {}
-    for c in [settle_currency(symbol), "USDT", "USDC", "USD"]:
+    for c in [c for c in [settle_currency(symbol), "USDT", "USDC", "USD"] if c]:
         try:
             v = float(bal.get(c) or 0)
         except (TypeError, ValueError):
@@ -63,6 +67,37 @@ def meets_min_notional(ex, symbol: str, qty: float, price: float, live: bool) ->
     min_amt = lim.get("min_amount") or 0
     min_cost = lim.get("min_cost") or 0
     return not ((min_amt and qty < min_amt) or (min_cost and qty * price < min_cost))
+
+
+_EQ_CACHE: dict[str, tuple[float, float]] = {}
+
+def should_send_error(cache: dict[str, float], key: str, now: float, ttl: float = 900.0) -> bool:
+    """Max. 1 Fehlermeldung pro Symbol und Viertelstunde (kein Telegram-Spam)."""
+    last = cache.get(key)
+    if last is not None and now - last < ttl:
+        return False
+    cache[key] = now
+    return True
+
+def cached_equity(key: str, ex, symbol: str, mode: str, ttl: float = 60.0) -> float:
+    import time as _t
+    now = _t.time()
+    hit = _EQ_CACHE.get(key)
+    if hit and now - hit[0] < ttl:
+        return hit[1]
+    v = get_equity(ex, symbol, mode)
+    _EQ_CACHE[key] = (now, v)
+    return v
+
+def save_open_if_changed(db, exchange: str, symbol: str, payload: dict, cache: dict[str, str]) -> bool:
+    import hashlib as _h, json as _j
+    h = _h.md5(_j.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
+    k = exchange + ":" + symbol
+    if cache.get(k) == h:
+        return False
+    save_open(db, exchange, symbol, payload)
+    cache[k] = h
+    return True
 
 
 def closed_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -236,6 +271,8 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
     ex_map: dict = {}
     lev_ok: dict[str, bool] = {}
     warned: set[str] = set()
+    err_sent: dict[str, float] = {}
+    saved_hash: dict[str, str] = {}
     for s in cfg.symbols:
         if s.enabled and s.exchange not in ex_map:
             try:
@@ -281,7 +318,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     pnl = tranche_pnl(cycle["side"], cycle["entry"], price,
                                       sum(t["qty"] for t in cycle["tps"] if not t["hit"]), cycle["fee_pct"]) + cycle["realized"]
                     try:
-                        eqx = get_equity(ex, s.symbol, cfg.mode)
+                        eqx = cached_equity(key, ex, s.symbol, cfg.mode)
                     except Exception:
                         eqx = 10000.0
                     finish_close(db, risk, cfg, s, cycle, pnl, price, "EXTERN", eqx)
@@ -294,7 +331,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         TG.send(msg)
                 if cycle:
                     if cycle.pop("just_opened", False):
-                        save_open(db, s.exchange, s.symbol, cycle)
+                        save_open_if_changed(db, s.exchange, s.symbol, cycle, saved_hash)
                         continue
                     # refresh entry from broker once (avg fill)
                     if cfg.mode == "live" and not cycle.get("entry_synced"):
@@ -325,7 +362,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         move_native_stop(ex, s.symbol, cycle)
                     if ev["closed_all"]:
                         try:
-                            eq = get_equity(ex, s.symbol, cfg.mode)
+                            eq = cached_equity(key, ex, s.symbol, cfg.mode)
                         except Exception:
                             eq = 10000.0
                         finish_close(db, risk, cfg, s, cycle, cycle["realized"], price, ev["why"], eq)
@@ -333,7 +370,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         if ev["why"] != "OPP_REVERSE":
                             continue  # normal close: fallthrough only for reverse entries
                     else:
-                        save_open(db, s.exchange, s.symbol, cycle)
+                        save_open_if_changed(db, s.exchange, s.symbol, cycle, saved_hash)
                         continue
                 # --- flat: entry check ---
                 if risk.killed:
@@ -347,7 +384,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                 want = "long" if sig["long"] else ("short" if sig["short"] else "")
                 if not want:
                     continue
-                equity = get_equity(ex, s.symbol, cfg.mode)
+                equity = cached_equity(key, ex, s.symbol, cfg.mode)
                 anchor = price
                 stop = round_price(ex, s.symbol, entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"])) if cfg.mode == "live" else entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"])
                 if want == "long" and anchor <= stop or want == "short" and anchor >= stop:
@@ -400,7 +437,8 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
             except Exception as e:
                 log.error("symbol loop error", extra={"symbol": s.symbol, "error": str(e)})
                 if cfg.telegram.enabled and cfg.telegram.notify_errors:
-                    TG.send(f"FEHLER {s.exchange} {s.symbol}: {e}")
+                    if should_send_error(err_sent, key, time.time()):
+                        TG.send(f"FEHLER {s.exchange} {s.symbol}: {e}")
         # auto kill-switch: close everything
         if risk.killed and not getattr(run_loop, "_kill_closed", False):
             run_loop._kill_closed = True  # type: ignore[attr-defined]

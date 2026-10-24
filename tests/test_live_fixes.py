@@ -2,7 +2,7 @@ import inspect
 import pandas as pd
 import typer
 from gg_bot.orders import stop_market_type
-from gg_bot.engine import send_market_close, closed_frame, meets_min_notional
+from gg_bot.engine import send_market_close, closed_frame, meets_min_notional, should_send_error, cached_equity, save_open_if_changed, _EQ_CACHE
 from gg_bot import cli
 
 class FakeEx:
@@ -59,3 +59,49 @@ def test_min_notional_gate():
     assert meets_min_notional(ex, "X", 0.1, 100.0, True) is True    # 10 USDT ok
     assert meets_min_notional(_LimEx(fail=True), "X", 1.0, 100.0, True) is False  # live: fail-safe
     assert meets_min_notional(_LimEx(fail=True), "X", 1.0, 100.0, False) is True  # paper: tolerant
+
+
+def test_error_cooldown():
+    c: dict = {}
+    assert should_send_error(c, "k", 0.0) is True
+    assert should_send_error(c, "k", 10.0) is False
+    assert should_send_error(c, "k", 901.0) is True
+    assert should_send_error(c, "other", 901.0) is True
+
+def test_cached_equity_calls_once_per_ttl():
+    _EQ_CACHE.clear()
+    calls = []
+    class FakeEx:
+        def fetch_balance(self):
+            calls.append(1)
+            return {"total": {"USDT": 500.0}}
+    assert cached_equity("e:S", FakeEx(), "S", "live", ttl=60.0) == 500.0
+    assert cached_equity("e:S", FakeEx(), "S", "live", ttl=60.0) == 500.0
+    assert len(calls) == 1
+
+def test_save_open_only_on_change():
+    from gg_bot.state import connect, load_open
+    db = connect(":memory:")
+    cache: dict = {}
+    cyc = {"cycle": 1, "side": "long"}
+    assert save_open_if_changed(db, "ex", "S", cyc, cache) is True
+    assert save_open_if_changed(db, "ex", "S", cyc, cache) is False
+    assert load_open(db, "ex", "S") == cyc
+    cyc2 = {"cycle": 2, "side": "long"}
+    assert save_open_if_changed(db, "ex", "S", cyc2, cache) is True
+
+def test_leverage_range_rejected():
+    import pytest as _pt
+    from gg_bot.config import SymbolCfg
+    with _pt.raises(Exception):
+        SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=100)
+    assert SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=50).leverage == 50
+
+def test_backtest_tolerates_none_manual():
+    import numpy as np, pandas as pd
+    from gg_bot.backtest import run
+    n = 60
+    px = 100 + np.cumsum(np.random.RandomState(7).randn(n))
+    df = pd.DataFrame({"open": px, "high": px + 0.5, "low": px - 0.5, "close": px, "volume": [10.0] * n})
+    res = run(df, {}, {"bb_len": None, "sizing": None, "tp_weights": None})
+    assert set(res) == {"trades", "winrate", "total_pct", "avg_pct"}
