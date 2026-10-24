@@ -4,8 +4,9 @@ import pandas as pd
 from . import strategy as S
 
 def run(df: pd.DataFrame, preset: dict, manual: dict, fee_pct: float = 0.05, slippage_pct: float = 0.0) -> dict:
-    f = S.compute_frame(df, {**preset, **manual})
-    f = S.trend_signals(f, {**preset, **manual})
+    p = {**preset, **{k: v for k, v in (manual or {}).items() if v is not None}}
+    f = S.compute_frame(df, p)
+    f = S.trend_signals(f, p)
     trades = []
     pos = None
     for i in range(len(f)):
