@@ -17,9 +17,9 @@ Live-Trading-Bot (Python 3.13, CCXT) fuer Hyperliquid + Aster + Binance (USDT-M)
 ## CLI
 - `run [--once]` — Engine starten (einmal oder Loop)
 - `status` — Mode, Symbole, Zyklen aus SQLite
-- `config-validate / config-show` — Config + Presets pruefen
+- `config-validate [--check-markets] / config-show` — Config + Presets pruefen (`--check-markets` gleicht Symbole live mit den Boersen ab)
 - `preset-list / preset-show KEY` — z. B. `BTC_1h`
-- `backtest --symbol BTC/USDT:USDT --limit 1000` — read-only Smoke ueber CCXT-OHLCV
+- `backtest --symbol BTC/USDC:USDC --limit 1000` — read-only Smoke ueber CCXT-OHLCV (Symbol passend zur Boerse waehlen)
 - `positions-close-all --i-understand-live` — Not-Aus (reduceOnly)
 - `kill-engage --reason ...` — Kill-Switch (stoppt neue Entries)
 - `telegram-test`, `healthcheck` (Docker)
@@ -27,18 +27,20 @@ Live-Trading-Bot (Python 3.13, CCXT) fuer Hyperliquid + Aster + Binance (USDT-M)
 ## Sicherheit
 - Secrets nur in `.env` (600), nie im Image/Repo/Logs (Redaction aktiv).
 - Non-root-User, `no-new-privileges`, Read-only `config`-Mount.
-- Hyperliquid: `HYPERLIQUID_WALLET_ADDRESS` + `HYPERLIQUID_PRIVATE_KEY` (Hex). Aster: Key/Secret.
+- Hyperliquid: `HYPERLIQUID_WALLET_ADDRESS` + `HYPERLIQUID_PRIVATE_KEY` (Hex). Aster/Binance: Key/Secret (siehe `.env.example`).
+- GitHub: Secret-Scanning + Push-Protection in den Repo-Settings einschalten (fuer public Repos gratis).
 - Updates: `docker compose pull/build && config-validate && up -d`. Rollback ueber Image-Tag.
 - Backup: `data/state.db` + `config.yaml` regelmaessig sichern.
 
 ## Strategie-Paritaet
 `config/presets.json` = 1:1-Transkript der Pine-Tabellen (`f_cfg_signal/filter/tp_sl/trail`, 78 Keys + `_finetune_overrides` + `_defaults_*`).
-Engine: closed-bar Signale, Trendlinie/Breakout, ATR/RSI/Volumen-Filter, Pyramiding/Cooldown, Stoprisiko/Marginbudget-Sizing, 4 TP-Tranchen, BE/Trailing-Trigger, Oszillator-Exit. Order-Modi pro Symbol: `bot_managed` oder `exchange_native`.
+Engine: Closed-Candle-Signale (kein Repaint), Trendlinie/Breakout, ATR/RSI/Volumen-Filter, Cooldown, Stoprisiko/Marginbudget-Sizing, 4 TP-Tranchen, BE/Trailing-Trigger, Oszillator-Exit. Order-Modi pro Symbol: `bot_managed` oder `exchange_native`.
 
 ## Ausfuehrungs-Engine (ergaenzt nach Review)
 - **Hebel:** wird beim Start pro Symbol per `set_leverage` an die Boerse gepusht. Schlaegt das fehl, ist das Symbol fail-safe blockiert (kein Trading mit falschem Account-Hebel).
 - **Equity:** aus der Settlement-Waehrung des Symbols (z. B. USDC bei Hyperliquid). Kein Rueckfall auf 10000 im Live-Modus: ohne Guthaben wird das Symbol mit klarem Fehler blockiert.
 - **Positionsschutz:** kein Entry bei offener/verwaister Position; Cooldown in Kerzen nach Close; Kill-Switch blockiert Entries und schliesst live alles.
 - **Exits:** `bot_managed` ueberwacht SL/TP1-4/BE/Trailing/Opposite/Oszillator aktiv; `exchange_native` legt volles Bracket (SL + alle TP-Tranchen, gewichtet) und zieht den Boersen-SL bei BE/Trailing nach. Paper tradet die gleiche Logik simuliert.
-- **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
+- **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); `leverage` 1-50 (Config-Validierung); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
+- **Order-Guards:** Entries unter Exchange-Minimum (`min_amount`/`min_cost`) werden geskippt; in `exchange_native` werden TP/SL/BE/TRAIL nur gebucht (Ausfuehrung nativ, kein Doppel-Exit), der Boersen-SL wird per Order-ID nachgezogen; Fehlermeldungen max. 1x pro Symbol und Viertelstunde; Equity wird 60 s gecacht.
 - **Presets:** 78 Keys (26 Assets x 3 Timeframes) + Finetune-Overrides. Tages-PnL setzt sich bei Neustart zurueck (Limit gilt pro Laufzeit).
