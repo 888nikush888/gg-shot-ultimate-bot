@@ -105,3 +105,15 @@ def test_backtest_tolerates_none_manual():
     df = pd.DataFrame({"open": px, "high": px + 0.5, "low": px - 0.5, "close": px, "volume": [10.0] * n})
     res = run(df, {}, {"bb_len": None, "sizing": None, "tp_weights": None})
     assert set(res) == {"trades", "winrate", "total_pct", "avg_pct"}
+
+
+def test_swap_only_skips_broken_spot():
+    from gg_bot.exchanges import _swap_only
+    class FakeEx:
+        def fetch_swap_markets(self, params={}):
+            return [{"symbol": "BTC/USDC:USDC"}]
+        def fetch_spot_markets(self, params={}):
+            raise TypeError("unsupported operand type(s) for +: NoneType and str")
+    ex = FakeEx()
+    _swap_only(ex)
+    assert ex.fetch_markets() == [{"symbol": "BTC/USDC:USDC"}]

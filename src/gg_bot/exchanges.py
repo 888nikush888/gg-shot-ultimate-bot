@@ -13,6 +13,7 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
         elif need_auth:
             raise RuntimeError("HYPERLIQUID_WALLET_ADDRESS / HYPERLIQUID_PRIVATE_KEY missing in .env")
         ex = ccxt.hyperliquid(params)
+        _swap_only(ex)  # CCXT-Spot-Listing stuerzt ab (base=None); wir traden nur Perps
         if testnet:
             ex.set_sandbox_mode(True)
         return ex
@@ -39,6 +40,12 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
             ex.set_sandbox_mode(True)
         return ex
     raise ValueError(f"unknown exchange {name}")
+
+def _swap_only(ex) -> None:
+    """Laedt nur Perp-Maerkte (umgeht fehlerhafte Spot-Listings in CCXT)."""
+    swap = ex.fetch_swap_markets
+    ex.fetch_markets = lambda params={}: swap(params)  # noqa: E731
+
 
 def set_leverage(ex, symbol: str, leverage: int) -> bool:
     """Push account leverage for symbol. Returns True if accepted."""
