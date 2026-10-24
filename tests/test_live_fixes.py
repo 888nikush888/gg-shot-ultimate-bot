@@ -2,7 +2,7 @@ import inspect
 import pandas as pd
 import typer
 from gg_bot.orders import stop_market_type
-from gg_bot.engine import send_market_close, closed_frame
+from gg_bot.engine import send_market_close, closed_frame, meets_min_notional
 from gg_bot import cli
 
 class FakeEx:
@@ -40,3 +40,22 @@ def test_close_all_flag_is_real_option():
 def test_env_example_has_binance_keys():
     txt = open(".env.example", encoding="utf-8").read()
     assert "BINANCE_API_KEY=" in txt and "BINANCE_API_SECRET=" in txt
+
+
+class _LimEx:
+    def __init__(self, limits=None, fail=False):
+        self._limits = limits
+        self._fail = fail
+    def load_markets(self):
+        if self._fail:
+            raise RuntimeError("offline")
+    def market(self, symbol):
+        return {"limits": {"amount": {"min": self._limits[0]}, "cost": {"min": self._limits[1]}},
+                "precision": {}, "contractSize": 1.0}
+
+def test_min_notional_gate():
+    ex = _LimEx((0.001, 5.0))
+    assert meets_min_notional(ex, "X", 0.01, 100.0, True) is False   # 1 USDT < 5
+    assert meets_min_notional(ex, "X", 0.1, 100.0, True) is True    # 10 USDT ok
+    assert meets_min_notional(_LimEx(fail=True), "X", 1.0, 100.0, True) is False  # live: fail-safe
+    assert meets_min_notional(_LimEx(fail=True), "X", 1.0, 100.0, False) is True  # paper: tolerant

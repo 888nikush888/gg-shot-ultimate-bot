@@ -1,15 +1,5 @@
 """Order execution: entries, full TP/SL brackets, position close. Idempotent client IDs."""
 from __future__ import annotations
-from dataclasses import dataclass
-
-@dataclass
-class LegOrder:
-    cycle: int
-    leg: int
-    qty: float
-    price: float | None
-    side: str
-
 def client_id(cycle: int, leg: int, tranche: int) -> str:
     return f"gg{cycle}L{leg}T{tranche}"
 
