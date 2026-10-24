@@ -1,0 +1,21 @@
+services:
+  gg-bot:
+    build: .
+    image: gg-shot-ultimate-v6:latest
+    container_name: gg-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      TZ: UTC
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '5'
+    security_opt:
+      - no-new-privileges:true

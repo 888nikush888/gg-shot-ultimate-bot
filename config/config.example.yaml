@@ -1,0 +1,38 @@
+mode: paper
+poll_seconds: 20
+fine_tune: false
+state_path: /app/data/state.db
+risk:
+  max_daily_loss_pct: 5.0
+  max_position_value_pct: 100.0
+  kill_switch_on_start: false
+  cooldown_bars: 1
+telegram:
+  enabled: false
+  notify_open: true
+  notify_close: true
+  notify_kill: true
+  notify_errors: true
+manual:
+  sizing: Stoprisiko
+  risk_pct: 1.0
+  capital_pct: 10.0
+  legs: 1
+  pivot_len: 5
+  osc_low: 20
+  osc_high: 80
+symbols:
+  - exchange: hyperliquid
+    symbol: BTC/USDC:USDC
+    asset_preset: BTC
+    timeframe: 1h
+    leverage: 10
+    order_mode: bot_managed
+    enabled: true
+  - exchange: aster
+    symbol: BTC/USDT:USDT
+    asset_preset: BTC
+    timeframe: 1h
+    leverage: 10
+    order_mode: exchange_native
+    enabled: false

@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "gg-bot"
+version = "1.0.0"
+requires-python = ">=3.13"
+dependencies = ["ccxt==4.4.87","pyyaml==6.0.2","pydantic==2.10.6","pydantic-settings==2.7.0","typer==0.15.2","structlog==24.4.0","httpx==0.28.1","numpy==2.2.2","pandas==2.2.3"]
+[tool.setuptools.packages.find]
+where = ["src"]

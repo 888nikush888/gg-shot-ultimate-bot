@@ -1,0 +1,29 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Unit tests
+        run: PYTHONPATH=src pytest tests -q
+      - name: Config validate (offline)
+        run: PYTHONPATH=src python -m gg_bot config-validate --config config/config.example.yaml
+      - name: Preset smoke
+        run: PYTHONPATH=src python -m gg_bot preset-show BTC_1h | head -5
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t gg-shot:test .
+      - name: Healthcheck inside image
+        run: docker run --rm -e BOT_MODE=paper gg-shot:test healthcheck --config /app/config/config.example.yaml
