@@ -1,6 +1,6 @@
 # GG-Shot Ultimate v6 Bot
 
-Live-Trading-Bot (Python 3.14, CCXT) fuer Hyperliquid + Aster Perps. Multi-Asset parallel, Voll-CLI, Docker 24/7.
+Live-Trading-Bot (Python 3.13, CCXT) fuer Hyperliquid + Aster Perps. Multi-Asset parallel, Voll-CLI, Docker 24/7.
 
 > WARNUNG: `mode: live` handelt mit echtem Geld. Starte immer mit `mode: paper`, dann `config-validate`,
 > dann genau ein Symbol mit Min-Size. `kill-engage` und `positions-close-all` sind deine Not-Aus.
