@@ -46,6 +46,19 @@ def round_amount(ex, symbol: str, qty: float) -> float:
     except Exception:
         return qty
 
+NATIVE_BOOK_ONLY = ("TP", "SL", "BE", "TRAIL")
+
+
+def send_market_close(order_mode: str, reason: str, live: bool) -> bool:
+    """In exchange_native, TP/SL/BE/TRAIL execute on the exchange; only OPP/OSC need a market close."""
+    return not (live and order_mode == "exchange_native" and reason in NATIVE_BOOK_ONLY)
+
+
+def closed_frame(df: pd.DataFrame) -> pd.DataFrame:
+    """Signals only on confirmed candles (Pine timing=Kerzenschluss, no repaint)."""
+    return df.iloc[:-1] if len(df) > 1 else df
+
+
 def fetch_frame(ex, symbol: str, tf: str, limit: int = 600) -> pd.DataFrame:
     ohlcv = ex.fetch_ohlcv(symbol, tf, limit=limit)
     df = pd.DataFrame(ohlcv, columns=["ts", "open", "high", "low", "close", "volume"])
@@ -242,8 +255,13 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
             try:
                 preset = get_preset(s.asset_preset, s.timeframe, cfg.fine_tune)
                 df = fetch_frame(ex, s.symbol, s.timeframe)
-                sig = evaluate(df, preset, cfg.manual or {})
+                if len(df) < 2:
+                    continue
+                sig = evaluate(closed_frame(df), preset, cfg.manual or {})
                 price = last_price(ex, s.symbol, sig["close"]) if cfg.mode == "live" else sig["close"]
+                forming = df.iloc[-1]
+                ex_hi = max(float(forming["high"]), price)
+                ex_lo = min(float(forming["low"]), price)
                 cycle = load_open(db, s.exchange, s.symbol)
                 # reconcile live exchange state
                 live_qty = X.fetch_position_qty(ex, s.symbol) if cfg.mode == "live" else 0.0
@@ -278,8 +296,11 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                             cycle["entry_synced"] = True
                         except Exception:
                             pass
-                    ev = monitor(cycle, price, sig["high"], sig["low"], sig["atr"], sig["trend_line"], sig, cfg.manual or {})
+                    ev = monitor(cycle, price, ex_hi, ex_lo, sig["atr"], sig["trend_line"], sig, cfg.manual or {})
                     for qty, px, reason in ev["closes"]:
+                        if not send_market_close(s.order_mode, reason, cfg.mode == "live"):
+                            cycle["realized"] += tranche_pnl(cycle["side"], cycle["entry"], px, qty, cycle["fee_pct"])
+                            continue  # exchange executes TP/SL natively; only book it
                         rq = round_amount(ex, s.symbol, qty) if cfg.mode == "live" else qty
                         if cfg.mode == "live":
                             from .orders import close_position, client_id
@@ -344,7 +365,9 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     if s.order_mode == "exchange_native":
                         tps = [(round_price(ex, s.symbol, t["price"]), round_amount(ex, s.symbol, t["qty"])) for t in cycle["tps"]]
                         try:
-                            place_bracket(ex, s.symbol, want, qty, stop, tps, cycle_no)
+                            placed = place_bracket(ex, s.symbol, want, qty, stop, tps, cycle_no)
+                            if placed and placed[0].get("id"):
+                                cycle["stop_order_id"] = placed[0]["id"]
                         except Exception as e:
                             log.error("bracket failed, closing entry", extra={"symbol": s.symbol, "error": str(e)})
                             from .orders import close_position
@@ -407,22 +430,33 @@ def finish_close(db, risk: RiskState, cfg: AppCfg, s, cycle: dict, pnl: float, p
         TG.trade_close(s.exchange, s.symbol, pnl, why)
 
 def move_native_stop(ex, symbol: str, cycle: dict) -> None:
-    """Move exchange-native SL after BE/trailing: cancel stop orders, place new stopMarket."""
+    """Move exchange-native SL after BE/trailing: cancel tracked stop, place new one."""
+    from .orders import stop_market_type, client_id
     try:
         side = cycle["side"]
         exit_side = "sell" if side == "long" else "buy"
-        for o in ex.fetch_open_orders(symbol):
-            otype = str(o.get("type", "")) + str(o.get("info", ""))
-            if "stop" in otype.lower() or "trigger" in str(o.get("info", "")).lower():
-                try:
-                    ex.cancel_order(o["id"], symbol)
-                except Exception:
-                    pass
-        remaining = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
+        cancelled = False
+        if cycle.get("stop_order_id"):
+            try:
+                ex.cancel_order(cycle["stop_order_id"], symbol)
+                cancelled = True
+            except Exception:
+                pass
+        if not cancelled:
+            for o in ex.fetch_open_orders(symbol):
+                blob = str(o.get("type", "")) + str(o.get("info", ""))
+                if "stop" in blob.lower() or "trigger" in blob.lower():
+                    try:
+                        ex.cancel_order(o["id"], symbol)
+                    except Exception:
+                        pass
+        live = abs(X.fetch_position_qty(ex, symbol))
+        remaining = live if live > 0 else sum(t["qty"] for t in cycle["tps"] if not t["hit"])
         if remaining > 0:
-            from .orders import client_id
-            ex.create_order(symbol, "stopMarket", exit_side, remaining, None,
-                            {"stopPrice": cycle["stop"], "reduceOnly": True,
-                             "clientOrderId": client_id(cycle["cycle"], 0, 8)})
+            oid = ex.create_order(symbol, stop_market_type(ex), exit_side, remaining, None,
+                                {"stopPrice": cycle["stop"], "reduceOnly": True,
+                                 "clientOrderId": client_id(cycle["cycle"], 0, 8)})
+            if isinstance(oid, dict) and oid.get("id"):
+                cycle["stop_order_id"] = oid["id"]
     except Exception as e:
         log.error("move native stop failed", extra={"symbol": symbol, "error": str(e)})
