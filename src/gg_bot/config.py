@@ -6,7 +6,7 @@ import os, yaml
 from pydantic import BaseModel, Field, field_validator
 
 class SymbolCfg(BaseModel):
-    exchange: Literal["hyperliquid", "aster"]
+    exchange: Literal["hyperliquid", "aster", "binance"]
     symbol: str  # e.g. BTC/USDT:USDT
     asset_preset: str = "BTC"   # Pine Asset Preset name
     timeframe: Literal["15m", "30m", "1h"] = "1h"

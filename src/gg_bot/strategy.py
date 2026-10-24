@@ -1,17 +1,9 @@
 """Signal core: trendline/breakout, filters, oscillator, TP/BE/trailing math (Pine parity)."""
 from __future__ import annotations
-from dataclasses import dataclass, field
 import pandas as pd
 from . import indicators as I
 
-@dataclass
-class TrendState:
-    line: float = float("nan")
-    direction: int = 0
-    number: int = 0
-
 def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
-    """Adds all indicator columns. df needs open/high/low/close/volume."""
     out = df.copy()
     bb_len = int(p.get("bb_len", 100)); bb_dev = float(p.get("bb_dev", 1.5))
     range_len = int(p.get("range_len", 200))
@@ -48,26 +40,34 @@ def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out["osc_d"] = out["osc_k"].rolling(o_d, min_periods=o_d).mean()
     out["ema_low"] = I.ema(out["low"], smooth)
     out["ema_high"] = I.ema(out["high"], smooth)
+    out["ad_low"] = I.adaptive_series(out["low"], out["regime"], smooth)
+    out["ad_high"] = I.adaptive_series(out["high"], out["regime"], smooth)
     return out
 
-def trend_signals(df: pd.DataFrame, p: dict, pivot_len: int = 5) -> pd.DataFrame:
-    """Trendline + breakout + bounce + oscillator cross + divergence flags (closed bars)."""
+def _refs(style: str, l: float, h: float, el: float, eh: float, al: float, ah: float) -> tuple[float, float]:
+    if style == "Sharp":
+        return l, h
+    if style == "Balanced":
+        return (el if el == el else l), (eh if eh == eh else h)
+    # Smooth: regime-adaptive filter (Pine adaptiveLow/adaptiveHigh)
+    return (al if al == al else l), (ah if ah == ah else h)
+
+def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out = df.copy()
     basis, style = p.get("basis", "Bollinger"), p.get("style", "Sharp")
     buf_on, buf_mult = bool(p.get("trend_buffer_on")), float(p.get("trend_buffer_mult", 1.0))
     lines: list[float] = []; dirs: list[int] = []
-    prev_line, prev_dir, tnum = float("nan"), 0, 0
-    import math
+    prev_line, prev_dir = float("nan"), 0
     turns_l, turns_s = [], []
     for i in range(len(out)):
         th_u = out["bb_up"].iloc[i] if basis == "Bollinger" else out["upper"].iloc[i]
         th_d = out["bb_dn"].iloc[i] if basis == "Bollinger" else out["lower"].iloc[i]
         c, h, l = out["close"].iloc[i], out["high"].iloc[i], out["low"].iloc[i]
         brk = 1 if c > th_u else (-1 if c < th_d else 0)
-        lc = l if style == "Sharp" else (out["ema_low"].iloc[i] if style == "Balanced" else l)
-        hc = h if style == "Sharp" else (out["ema_high"].iloc[i] if style == "Balanced" else h)
+        lc, hc = _refs(style, l, h, out["ema_low"].iloc[i], out["ema_high"].iloc[i],
+                        out["ad_low"].iloc[i], out["ad_high"].iloc[i])
         buf = out["atr"].iloc[i] * buf_mult if buf_on else 0.0
-        if pd.isna(prev_line):
+        if prev_line != prev_line:
             prev_line = lc if brk == 1 else (hc if brk == -1 else c)
         if brk == 1:
             line = max(prev_line, lc - buf)
@@ -78,8 +78,6 @@ def trend_signals(df: pd.DataFrame, p: dict, pivot_len: int = 5) -> pd.DataFrame
         d = 1 if line > prev_line else (-1 if line < prev_line else prev_dir)
         tl = prev_dir == -1 and d == 1
         ts = prev_dir == 1 and d == -1
-        if (tl or ts) and d != prev_dir:
-            tnum += 1
         lines.append(line); dirs.append(d); turns_l.append(tl); turns_s.append(ts)
         prev_line, prev_dir = line, d
     out["trend_line"], out["trend_dir"] = lines, dirs
@@ -102,8 +100,7 @@ def tp_distances(anchor: float, stop: float, atr_v: float, p: dict, tp_count: in
     basis = p.get("tp_basis", "Prozent")
     outs = []
     for j in range(tp_count):
-        key = f"tp{j+1}"
-        v = float(p.get(key, 2.0))
+        v = float(p.get(f"tp{j+1}", 2.0))
         d = anchor * v / 100 if basis == "Prozent" else (atr_v * v if basis == "ATR" else abs(anchor - stop) * v)
         outs.append(max(d, 1e-9))
     return outs
