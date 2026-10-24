@@ -37,5 +37,3 @@ def clear_open(c: sqlite3.Connection, exchange: str, symbol: str) -> None:
     c.execute("DELETE FROM open_cycles WHERE exchange=? AND symbol=?", (exchange, symbol))
     c.commit()
 
-def list_open(c: sqlite3.Connection) -> list[dict]:
-    return [{"exchange": e, "symbol": s} for e, s in c.execute("SELECT exchange, symbol FROM open_cycles")]

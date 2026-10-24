@@ -54,6 +54,17 @@ def send_market_close(order_mode: str, reason: str, live: bool) -> bool:
     return not (live and order_mode == "exchange_native" and reason in NATIVE_BOOK_ONLY)
 
 
+def meets_min_notional(ex, symbol: str, qty: float, price: float, live: bool) -> bool:
+    """Blockt Entries unter Exchange-Minimum (Fail-safe: live ohne Limits = blockiert)."""
+    try:
+        lim = X.market_limits(ex, symbol)
+    except Exception:
+        return not live
+    min_amt = lim.get("min_amount") or 0
+    min_cost = lim.get("min_cost") or 0
+    return not ((min_amt and qty < min_amt) or (min_cost and qty * price < min_cost))
+
+
 def closed_frame(df: pd.DataFrame) -> pd.DataFrame:
     """Signals only on confirmed candles (Pine timing=Kerzenschluss, no repaint)."""
     return df.iloc[:-1] if len(df) > 1 else df
@@ -119,10 +130,11 @@ def build_cycle(cycle_no: int, side: str, qty: float, entry: float, stop: float,
     s = sum(w)
     acc = 0.0
     for j in range(tp_count):
-        q = qty * w[j] / s if j < tp_count - 1 else qty - acc
-        acc += qty * w[j] / s if j < tp_count - 1 else 0.0
-        if j == tp_count - 1:
-            q = qty - sum(t["qty"] for t in tps)
+        if j < tp_count - 1:
+            q = qty * w[j] / s
+            acc += q
+        else:
+            q = qty - acc
         px = entry + (1 if side == "long" else -1) * dists[j]
         tps.append({"price": px, "qty": q, "hit": False})
     return {"cycle": cycle_no, "side": side, "qty": qty, "entry": entry, "stop": stop,
@@ -148,7 +160,6 @@ def monitor(cycle: dict, price: float, hi: float, lo: float, atr_v: float,
     unf = min(lo, price) if side == "long" else max(hi, price)
     cycle["extreme"] = max(cycle["extreme"], fav) if side == "long" else min(cycle["extreme"], fav)
     rr = sgn * (cycle["extreme"] - entry) / cycle["risk_r"] if cycle["risk_r"] > 0 else 0.0
-    hits = [t["hit"] for t in cycle["tps"]]
     out = {"closes": [], "new_stop": None, "closed_all": False, "why": ""}
     # 1. stop hit?
     if (side == "long" and unf <= cycle["stop"]) or (side == "short" and unf >= cycle["stop"]):
@@ -352,6 +363,9 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     continue
                 qty = round_amount(ex, s.symbol, qtys[0]) if cfg.mode == "live" else qtys[0]
                 if qty <= 0:
+                    continue
+                if not meets_min_notional(ex, s.symbol, qty, anchor, cfg.mode == "live"):
+                    log.error("under exchange minimum, skipped", extra={"symbol": s.symbol, "qty": qty})
                     continue
                 cycle_no += 1
                 cycle = build_cycle(cycle_no, want, qty, anchor, stop, preset, cfg.manual or {}, sig["atr"])
