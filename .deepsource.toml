@@ -1,0 +1,10 @@
+version: 1
+test_patterns:
+  - tests/**
+exclude_patterns:
+  - data/**
+  - logs/**
+  - __pycache__/**
+analyzers:
+  python:
+    enabled: true
