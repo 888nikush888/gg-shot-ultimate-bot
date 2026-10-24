@@ -99,9 +99,10 @@ def backtest(config: str = typer.Option("/app/config/config.yaml", "--config"), 
     typer.echo(json.dumps({"symbol": target.symbol, **res}, indent=2))
 
 @app.command("positions-close-all")
-def positions_close_all(config: str = typer.Option("/app/config/config.yaml", "--config"), symbol: str = typer.Option("", "--symbol")):
+def positions_close_all(config: str = typer.Option("/app/config/config.yaml", "--config"),
+                        symbol: str = typer.Option("", "--symbol"),
+                        i_understand_live: bool = typer.Option(False, "--i-understand-live")):
     """Emergency: close all positions (reduceOnly market). Requires --i-understand-live flag in live."""
-    i_understand_live: bool = typer.Option(False, "--i-understand-live")
     cfg = load_config(config)
     if cfg.mode != "live":
         typer.echo("paper mode: nothing to close (no live orders)")

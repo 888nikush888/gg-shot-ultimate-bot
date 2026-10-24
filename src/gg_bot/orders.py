@@ -13,6 +13,11 @@ class LegOrder:
 def client_id(cycle: int, leg: int, tranche: int) -> str:
     return f"gg{cycle}L{leg}T{tranche}"
 
+
+def stop_market_type(ex) -> str:
+    """Exchange-specific stop-market order type. Binance USD-M needs uppercase."""
+    return "STOP_MARKET" if "binance" in getattr(ex, "id", "") else "stopMarket"
+
 def place_entry(ex, symbol: str, side: str, qty: float, price: float | None, cid: str) -> dict:
     otype = "market" if price is None else "limit"
     return ex.create_order(symbol, otype, "buy" if side == "long" else "sell", qty, price, {"clientOrderId": cid})
@@ -21,7 +26,7 @@ def place_bracket(ex, symbol: str, side: str, total_qty: float, stop: float,
                   tps: list[tuple[float, float]], cycle: int) -> list[dict]:
     """SL (full qty, stopMarket reduceOnly) + one limit TP per tranche (reduceOnly)."""
     exit_side = "sell" if side == "long" else "buy"
-    outs = [ex.create_order(symbol, "stopMarket", exit_side, total_qty, None,
+    outs = [ex.create_order(symbol, stop_market_type(ex), exit_side, total_qty, None,
                             {"stopPrice": stop, "reduceOnly": True,
                              "clientOrderId": client_id(cycle, 0, 8)})]
     for j, (px, q) in enumerate(tps):
