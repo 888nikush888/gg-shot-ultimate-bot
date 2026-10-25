@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 from contextlib import suppress
 from datetime import datetime, timezone
+from typing import Any
 import pandas as pd
 from .config import AppCfg
 from .presets import get_preset
@@ -653,7 +654,12 @@ def monitor(
         if cycle["risk_r"] > 0
         else 0.0
     )
-    out = {"closes": [], "new_stop": None, "closed_all": False, "why": ""}
+    out: dict[str, Any] = {
+        "closes": [],
+        "new_stop": None,
+        "closed_all": False,
+        "why": "",
+    }
     # 1. stop hit?
     stop_ev = _stop_fill(side, unf, cycle)
     if stop_ev is not None:
@@ -727,7 +733,7 @@ def _init_exchanges(cfg, db, ex_map, lev_ok) -> None:
 
 
 def _warn_unknown_manual(cfg) -> None:
-    _known = set()
+    _known: set[str] = set()
     with suppress(Exception):
         from .presets import load_presets as _lp
 
@@ -1324,8 +1330,6 @@ def _poll_symbol(ctx, s) -> None:
         if q["cycle"] and not _poll_open(ctx, ex, s, key, q):
             return
         _poll_entry(ctx, ex, s, key, q)
-    except SystemExit:
-        raise
     except Exception as e:
         log.error("symbol loop error", extra={"symbol": s.symbol, "error": str(e)})
         if (

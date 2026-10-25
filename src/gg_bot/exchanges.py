@@ -107,6 +107,8 @@ def price_tick(ex, symbol: str) -> float | None:
     try:
         ex.load_markets()
         prec = (ex.market(symbol).get("precision") or {}).get("price")
+        if prec is None:
+            return None
         return 10.0 ** (-int(prec))
     except Exception:
         return None
