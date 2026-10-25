@@ -1,11 +1,24 @@
 """Position sizing exactly like the Pine validSetup block."""
+
 from __future__ import annotations
 import math
 
-def plan_qty(equity: float, avg_plan: float, point_value: float, sizing: str,
-             risk_pct: float, capital_pct: float, leverage: float, exposure_cap_pct: float,
-             stop_dist_per_unit: float, weights: list[float], legs: int, tp_count: int,
-             lot: float) -> tuple[list[float], float, float, str]:
+
+def plan_qty(
+    equity: float,
+    avg_plan: float,
+    point_value: float,
+    sizing: str,
+    risk_pct: float,
+    capital_pct: float,
+    leverage: float,
+    exposure_cap_pct: float,
+    stop_dist_per_unit: float,
+    weights: list[float],
+    legs: int,
+    tp_count: int,
+    lot: float,
+) -> tuple[list[float], float, float, str]:
     if equity <= 0 or avg_plan <= 0:
         return [], 0.0, 0.0, "equity/price invalid"
     max_position_value = equity * min(exposure_cap_pct / 100.0, leverage)

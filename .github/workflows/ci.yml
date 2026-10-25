@@ -1,32 +1,114 @@
 name: ci
+
 on:
   push:
     branches: [main]
   pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Install deps
-        run: pip install -r requirements.txt
-      - name: Lint (ruff, default rules)
-        run: pip install ruff==0.15.7 && ruff check src tests
-      - name: Unit tests
-        run: PYTHONPATH=src pytest tests -q
-      - name: Config validate (offline)
-        run: PYTHONPATH=src python -m gg_bot config-validate --config config/config.example.yaml
-      - name: Preset smoke
-        run: PYTHONPATH=src python -m gg_bot preset-show BTC_1h | head -5
-  docker:
+          cache: pip
+      - name: Install ruff
+        run: pip install ruff==0.15.7
+      - name: Ruff check
+        run: ruff check src tests
+      - name: Ruff format check
+        run: ruff format --check src tests
+      - name: Byte-compile all sources
+        run: python -m compileall -q src
+
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.13"
+            experimental: false
+          - python-version: "3.14"
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+    timeout-minutes: ${{ matrix.experimental && 40 || 20 }}
+    env:
+      PYTHONPATH: src
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install deps
+        run: pip install -r requirements.txt && pip install pytest-cov
+      - name: Dependency consistency
+        run: pip check
+      - name: Unit tests with coverage gate
+        run: pytest tests -q --cov=src/gg_bot --cov-report=term-missing --cov-fail-under=50
+      - name: Config validate (offline)
+        run: python -m gg_bot config-validate --config config/config.example.yaml
+      - name: Healthcheck (offline)
+        run: python -m gg_bot healthcheck --config config/config.example.yaml
+      - name: CLI entrypoint smoke
+        run: python -m gg_bot --help
+      - name: Preset smoke (multi-asset)
+        run: |
+          python -m gg_bot preset-show BTC_1h | head -5
+          python -m gg_bot preset-show ETH_30m | head -5
+          python -m gg_bot preset-show SOL_15m | head -5
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Bandit (no new issues)
+        run: pip install bandit && bandit -q -r src
+      - name: pip-audit (known CVEs)
+        run: pip install pip-audit && pip-audit -r requirements.txt
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hadolint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
+          hadolint-version: v2.12.0
+      - uses: docker/setup-buildx-action@v3
       - name: Build image
-        run: docker build -t gg-shot:test .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: gg-shot:test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Compose file validation
+        run: touch .env && docker compose -f docker-compose.yml config -q
       - name: Healthcheck inside image
         run: docker run --rm -e BOT_MODE=paper gg-shot:test healthcheck --config /app/config/config.example.yaml
+      - name: Config validate inside image
+        run: docker run --rm gg-shot:test config-validate --config /app/config/config.example.yaml
+      - name: Preset smoke inside image
+        run: docker run --rm gg-shot:test preset-show BTC_1h | head -5
 

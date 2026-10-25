@@ -1,4 +1,5 @@
 """Signal core: trendline/breakout, filters, oscillator, TP/BE/trailing math (Pine parity)."""
+
 from __future__ import annotations
 import numpy as np
 import pandas as pd
@@ -7,17 +8,39 @@ from contextlib import suppress
 from .indicators import _is_na
 
 _ALIASES = {
-    "oscMode": "osc_mode", "oscEntries": "osc_entries", "oscReentries": "osc_reentries",
-    "oscExit": "osc_exit", "oscAfter": "osc_exit_after", "oscLow": "osc_low", "oscHigh": "osc_high",
-    "oscRsiLen": "osc_rsi_len", "oscStochLen": "osc_stoch_len", "oscKLen": "osc_k_len",
-    "oscDLen": "osc_d_len", "reentryOn": "reentry_on", "maxReentries": "max_reentries",
-    "bounceOn": "bounce_on", "srBounceOn": "sr_bounce_on", "entryMode": "entry_mode",
-    "entryUnit": "entry_unit", "pullbackDistance": "pullback_distance", "limitLife": "limit_life",
-    "tradeSession": "trade_session", "sessionZone": "session_zone", "sessionOn": "session_on",
-    "closeSession": "close_session", "zoneAtr": "zone_atr", "divAge": "div_age",
-    "divMode": "div_mode", "pivotLen": "pivot_len", "allowLong": "allow_long",
-    "allowShort": "allow_short", "startDate": "date_start", "endDate": "date_end",
+    "oscMode": "osc_mode",
+    "oscEntries": "osc_entries",
+    "oscReentries": "osc_reentries",
+    "oscExit": "osc_exit",
+    "oscAfter": "osc_exit_after",
+    "oscLow": "osc_low",
+    "oscHigh": "osc_high",
+    "oscRsiLen": "osc_rsi_len",
+    "oscStochLen": "osc_stoch_len",
+    "oscKLen": "osc_k_len",
+    "oscDLen": "osc_d_len",
+    "reentryOn": "reentry_on",
+    "maxReentries": "max_reentries",
+    "bounceOn": "bounce_on",
+    "srBounceOn": "sr_bounce_on",
+    "entryMode": "entry_mode",
+    "entryUnit": "entry_unit",
+    "pullbackDistance": "pullback_distance",
+    "limitLife": "limit_life",
+    "tradeSession": "trade_session",
+    "sessionZone": "session_zone",
+    "sessionOn": "session_on",
+    "closeSession": "close_session",
+    "zoneAtr": "zone_atr",
+    "divAge": "div_age",
+    "divMode": "div_mode",
+    "pivotLen": "pivot_len",
+    "allowLong": "allow_long",
+    "allowShort": "allow_short",
+    "startDate": "date_start",
+    "endDate": "date_end",
 }
+
 
 def normalize_manual(manual: dict | None) -> dict:
     """Merge Pine camelCase keys into snake_case (snake wins). Never mutates input."""
@@ -27,11 +50,13 @@ def normalize_manual(manual: dict | None) -> dict:
             m[snake] = m[camel]
     return {k: v for k, v in m.items() if v is not None}
 
+
 def mval(manual: dict, *names, default=None):
     for n in names:
         if n in manual:
             return manual[n]
     return default
+
 
 def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out = df.copy()
@@ -58,7 +83,9 @@ def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out["sd"] = out["close"].rolling(bb_len, min_periods=bb_len).std(ddof=0)
     out["atr"] = I.atr(out["high"], out["low"], out["close"], atr_len)
     out["atr_mean"] = out["atr"].rolling(regime_len, min_periods=regime_len).mean()
-    out["regime"] = (out["atr"] / out["atr_mean"]).clip(adapt_min, adapt_max).fillna(1.0)
+    out["regime"] = (
+        (out["atr"] / out["atr_mean"]).clip(adapt_min, adapt_max).fillna(1.0)
+    )
     adapt = out["close"] * 0 + (1.0 if not p.get("adaptive_offset") else out["regime"])
     out["bb_up"] = out["mid"] + out["sd"] * bb_dev * adapt
     out["bb_dn"] = out["mid"] - out["sd"] * bb_dev * adapt
@@ -68,10 +95,17 @@ def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out["upper"] = out["rh"] - out["rw"] * fib_u
     out["lower"] = out["rh"] - out["rw"] * fib_l
     out["f_atr"] = I.atr(out["high"], out["low"], out["close"], f_atr_len)
-    fe, fs = I.ema(out["f_atr"], f_ma_len), out["f_atr"].rolling(f_ma_len, min_periods=f_ma_len).mean()
+    fe, fs = (
+        I.ema(out["f_atr"], f_ma_len),
+        out["f_atr"].rolling(f_ma_len, min_periods=f_ma_len).mean(),
+    )
     out["f_avg"] = fe if f_ma == "EMA" else fs
     out["rsi"] = I.rsi_floor(out["close"], rsi_len)
-    out["vol_avg"] = out["volume"].rolling(vol_len, min_periods=vol_len).mean() if "volume" in out else float("nan")
+    out["vol_avg"] = (
+        out["volume"].rolling(vol_len, min_periods=vol_len).mean()
+        if "volume" in out
+        else float("nan")
+    )
     out["osc_rsi"] = I.rsi_floor(out["close"], o_rsi)
     k = I.stoch_k(out["osc_rsi"], out["osc_rsi"], out["osc_rsi"], o_st)
     out["osc_k"] = k.rolling(o_k, min_periods=o_k).mean()
@@ -85,13 +119,17 @@ def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out["piv_high"] = I.pivothigh(out["high"], piv)
     return out
 
-def _refs(style: str, low: float, high: float, el: float, eh: float, al: float, ah: float) -> tuple[float, float]:
+
+def _refs(
+    style: str, low: float, high: float, el: float, eh: float, al: float, ah: float
+) -> tuple[float, float]:
     if style == "Sharp":
         return low, high
     if style == "Balanced":
         return (el if not _is_na(el) else low), (eh if not _is_na(eh) else high)
     # Smooth: regime-adaptive filter (Pine adaptiveLow/adaptiveHigh)
     return (al if not _is_na(al) else low), (ah if not _is_na(ah) else high)
+
 
 def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     """Pine pivot divergences + S/R levels. Returns (bull_age, bear_age, sup, res) arrays."""
@@ -115,15 +153,25 @@ def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     for i in range(n):
         if not _is_na(pl[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if (not _is_na(prior_pl) and pl[i] < prior_pl and not _is_na(prsi)
-                    and not _is_na(prior_pl_rsi) and prsi > prior_pl_rsi):
+            if (
+                not _is_na(prior_pl)
+                and pl[i] < prior_pl
+                and not _is_na(prsi)
+                and not _is_na(prior_pl_rsi)
+                and prsi > prior_pl_rsi
+            ):
                 last_bull = i
             prior_pl, prior_pl_rsi = pl[i], prsi
             cur_sup = pl[i]
         if not _is_na(ph[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if (not _is_na(prior_ph) and ph[i] > prior_ph and not _is_na(prsi)
-                    and not _is_na(prior_ph_rsi) and prsi < prior_ph_rsi):
+            if (
+                not _is_na(prior_ph)
+                and ph[i] > prior_ph
+                and not _is_na(prsi)
+                and not _is_na(prior_ph_rsi)
+                and prsi < prior_ph_rsi
+            ):
                 last_bear = i
             prior_ph, prior_ph_rsi = ph[i], prsi
             cur_res = ph[i]
@@ -140,7 +188,10 @@ def session_allows(now_utc, manual: dict) -> bool:
         return True
     with suppress(Exception):
         import zoneinfo
-        now_utc = now_utc.astimezone(zoneinfo.ZoneInfo(str(manual.get("session_zone", "Etc/UTC"))))
+
+        now_utc = now_utc.astimezone(
+            zoneinfo.ZoneInfo(str(manual.get("session_zone", "Etc/UTC")))
+        )
     days = manual.get("session_days", [1, 2, 3, 4, 5, 6, 7])
     if now_utc.isoweekday() % 7 + 1 not in days:
         return False
@@ -161,14 +212,21 @@ def session_allows(now_utc, manual: dict) -> bool:
 def date_allows(now_utc, manual: dict) -> bool:
     try:
         import datetime as _dt
-        start = _dt.datetime.fromisoformat(str(manual.get("date_start", "2020-01-01"))).replace(tzinfo=_dt.timezone.utc)
-        end = _dt.datetime.fromisoformat(str(manual.get("date_end", "2099-01-01"))).replace(tzinfo=_dt.timezone.utc)
+
+        start = _dt.datetime.fromisoformat(
+            str(manual.get("date_start", "2020-01-01"))
+        ).replace(tzinfo=_dt.timezone.utc)
+        end = _dt.datetime.fromisoformat(
+            str(manual.get("date_end", "2099-01-01"))
+        ).replace(tzinfo=_dt.timezone.utc)
         return start <= now_utc <= end
     except Exception:
         return True
 
 
-def pending_state(is_live: bool, live_qty: float, touched: bool, now_ts: float, deadline_ts: float) -> str:
+def pending_state(
+    is_live: bool, live_qty: float, touched: bool, now_ts: float, deadline_ts: float
+) -> str:
     """Pending pullback-limit entry: filled | waiting | expired."""
     if is_live:
         if live_qty != 0.0:
@@ -181,7 +239,10 @@ def pending_state(is_live: bool, live_qty: float, touched: bool, now_ts: float, 
 def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out = df.copy()
     basis, style = p.get("basis", "Bollinger"), p.get("style", "Sharp")
-    buf_on, buf_mult = bool(p.get("trend_buffer_on")), float(p.get("trend_buffer_mult", 1.0))
+    buf_on, buf_mult = (
+        bool(p.get("trend_buffer_on")),
+        float(p.get("trend_buffer_mult", 1.0)),
+    )
     bull_age, bear_age, sup, res = div_supres(out, p)
     out["bull_div_age"] = bull_age
     out["bear_div_age"] = bear_age
@@ -205,8 +266,15 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
         c, h, lo = out["close"].iloc[i], out["high"].iloc[i], out["low"].iloc[i]
         atr_v = out["atr"].iloc[i]
         brk = 1 if c > th_u else (-1 if c < th_d else 0)
-        lc, hc = _refs(style, lo, h, out["ema_low"].iloc[i], out["ema_high"].iloc[i],
-                        out["ad_low"].iloc[i], out["ad_high"].iloc[i])
+        lc, hc = _refs(
+            style,
+            lo,
+            h,
+            out["ema_low"].iloc[i],
+            out["ema_high"].iloc[i],
+            out["ad_low"].iloc[i],
+            out["ad_high"].iloc[i],
+        )
         buf = atr_v * buf_mult if buf_on else 0.0
         if _is_na(prev_line):
             prev_line = lc if brk == 1 else (hc if brk == -1 else c)
@@ -226,12 +294,24 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
             touched = (lo <= lower) and (h >= upper)
             tl = (not touched) and (lo <= lower) and (c > lower)
             ts = (not touched) and (h >= upper) and (c < upper)
-        touch_l = (d == 1) and ((bounce_on and lo <= line and c > line)
-                                or (sr_on and not _is_na(sup[i]) and not _is_na(atr_v)
-                                    and lo <= sup[i] + atr_v * zone and c > sup[i] + atr_v * zone))
-        touch_s = (d == -1) and ((bounce_on and h >= line and c < line)
-                                 or (sr_on and not _is_na(res[i]) and not _is_na(atr_v)
-                                     and h >= res[i] - atr_v * zone and c < res[i] - atr_v * zone))
+        touch_l = (d == 1) and (
+            (bounce_on and lo <= line < c)
+            or (
+                sr_on
+                and not _is_na(sup[i])
+                and not _is_na(atr_v)
+                and lo <= sup[i] + atr_v * zone < c
+            )
+        )
+        touch_s = (d == -1) and (
+            (bounce_on and c < line <= h)
+            or (
+                sr_on
+                and not _is_na(res[i])
+                and not _is_na(atr_v)
+                and c < res[i] - atr_v * zone <= h
+            )
+        )
         bounce_l.append(adv and touch_l and not prev_touch_l)
         bounce_s.append(adv and touch_s and not prev_touch_s)
         prev_touch_l, prev_touch_s = touch_l, touch_s
@@ -245,9 +325,14 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out["turn_long"], out["turn_short"] = turns_l, turns_s
     out["bounce_long"], out["bounce_short"] = bounce_l, bounce_s
     out["trend_no"] = tnums
-    out["osc_cross_up"] = I.crossover(out["osc_k"], out["osc_d"]) & (out[["osc_k"]].min(axis=1) <= float(p.get("osc_low", 20)))
-    out["osc_cross_dn"] = I.crossunder(out["osc_k"], out["osc_d"]) & (out[["osc_k"]].max(axis=1) >= float(p.get("osc_high", 80)))
+    out["osc_cross_up"] = I.crossover(out["osc_k"], out["osc_d"]) & (
+        out[["osc_k"]].min(axis=1) <= float(p.get("osc_low", 20))
+    )
+    out["osc_cross_dn"] = I.crossunder(out["osc_k"], out["osc_d"]) & (
+        out[["osc_k"]].max(axis=1) >= float(p.get("osc_high", 80))
+    )
     return out
+
 
 def trigger_hit(trigger: str, hits: list[bool], rr: float, thr: float) -> bool:
     if trigger == "Sofort":
@@ -259,11 +344,18 @@ def trigger_hit(trigger: str, hits: list[bool], rr: float, thr: float) -> bool:
             return True
     return False
 
-def tp_distances(anchor: float, stop: float, atr_v: float, p: dict, tp_count: int) -> list[float]:
+
+def tp_distances(
+    anchor: float, stop: float, atr_v: float, p: dict, tp_count: int
+) -> list[float]:
     basis = p.get("tp_basis", "Prozent")
     outs = []
     for j in range(tp_count):
-        v = float(p.get(f"tp{j+1}", 2.0))
-        d = anchor * v / 100 if basis == "Prozent" else (atr_v * v if basis == "ATR" else abs(anchor - stop) * v)
+        v = float(p.get(f"tp{j + 1}", 2.0))
+        d = (
+            anchor * v / 100
+            if basis == "Prozent"
+            else (atr_v * v if basis == "ATR" else abs(anchor - stop) * v)
+        )
         outs.append(max(d, 1e-9))
     return outs

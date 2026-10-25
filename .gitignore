@@ -6,3 +6,8 @@ data/*.db
 data/*.db-journal
 logs/
 config/config.yaml
+.coverage*
+
+audit*_out.txt
+joblog.txt
+/*.log

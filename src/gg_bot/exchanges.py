@@ -1,10 +1,13 @@
 """CCXT factory for hyperliquid + aster + binance (perps). Paper mode works keyless."""
+
 from __future__ import annotations
 from contextlib import suppress
 import os
 
+
 def build(name: str, testnet: bool = False, need_auth: bool = True):
     import ccxt
+
     if name == "hyperliquid":
         wallet = os.getenv("HYPERLIQUID_WALLET_ADDRESS", "")
         key = os.getenv("HYPERLIQUID_PRIVATE_KEY", "")
@@ -12,7 +15,9 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
         if wallet and key:
             params = {"walletAddress": wallet, "privateKey": key}
         elif need_auth:
-            raise RuntimeError("HYPERLIQUID_WALLET_ADDRESS / HYPERLIQUID_PRIVATE_KEY missing in .env")
+            raise RuntimeError(
+                "HYPERLIQUID_WALLET_ADDRESS / HYPERLIQUID_PRIVATE_KEY missing in .env"
+            )
         ex = ccxt.hyperliquid(params)
         _swap_only(ex)  # CCXT-Spot-Listing stuerzt ab (base=None); wir traden nur Perps
         if testnet:
@@ -44,6 +49,7 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
         return ex
     raise ValueError(f"unknown exchange {name}")
 
+
 def _swap_only(ex) -> None:
     """Laedt nur Perp-Maerkte (umgeht fehlerhafte Spot-Listings in CCXT)."""
     swap = ex.fetch_swap_markets
@@ -62,6 +68,7 @@ def set_leverage(ex, symbol: str, leverage: int) -> bool:
         except Exception:
             return False
 
+
 def fetch_position_qty(ex, symbol: str) -> float:
     """Signed open contracts for symbol (0 when flat). Never raises."""
     with suppress(Exception):
@@ -71,6 +78,7 @@ def fetch_position_qty(ex, symbol: str) -> float:
                 if amt:
                     return amt if p.get("side") == "long" else -amt
     return 0.0
+
 
 def price_tick(ex, symbol: str) -> float | None:
     """Kleinste Preisschrittweite aus Market-Precision (fuer Trendlinien-/S-R-Stops)."""
@@ -85,4 +93,9 @@ def price_tick(ex, symbol: str) -> float | None:
 def market_limits(ex, symbol: str) -> dict:
     ex.load_markets()
     m = ex.market(symbol)
-    return {"min_amount": m.get("limits", {}).get("amount", {}).get("min"), "min_cost": m.get("limits", {}).get("cost", {}).get("min"), "precision": m.get("precision", {}), "contract_size": m.get("contractSize", 1.0)}
+    return {
+        "min_amount": m.get("limits", {}).get("amount", {}).get("min"),
+        "min_cost": m.get("limits", {}).get("cost", {}).get("min"),
+        "precision": m.get("precision", {}),
+        "contract_size": m.get("contractSize", 1.0),
+    }
