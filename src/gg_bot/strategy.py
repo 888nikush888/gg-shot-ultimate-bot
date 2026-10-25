@@ -338,8 +338,10 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     zone = float(p.get("zone_atr", 0.25))
     lines: list[float] = []
     dirs: list[int] = []
-    turns_l, turns_s = [], []
-    bounce_l, bounce_s = [], []
+    turns_l: list[bool] = []
+    turns_s: list[bool] = []
+    bounce_l: list[bool] = []
+    bounce_s: list[bool] = []
     tnums: list[int] = []
     prev_line, prev_dir, tnum = float("nan"), 0, 0
     prev_touch_l, prev_touch_s = False, False
@@ -415,7 +417,7 @@ def tp_distances(
 ) -> list[float]:
     basis = p.get("tp_basis", "Prozent")
     tp_count = max(1, min(4, int(tp_count)))
-    outs = []
+    outs: list[float] = []
     for j in range(tp_count):
         v = float(p.get(f"tp{j + 1}", 2.0))
         if basis == "Prozent":

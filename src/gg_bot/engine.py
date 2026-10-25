@@ -1341,9 +1341,12 @@ def _poll_all(ctx) -> None:
         _poll_symbol(ctx, s)
 
 
+_kill_sweep = {"done": False}
+
+
 def _maybe_kill_sweep(ctx) -> None:
-    if ctx["risk"].killed and not getattr(run_loop, "_kill_closed", False):
-        run_loop._kill_closed = True  # type: ignore[attr-defined]
+    if ctx["risk"].killed and not _kill_sweep["done"]:
+        _kill_sweep["done"] = True
         for s in ctx["cfg"].symbols:
             if s.enabled and ctx["cfg"].mode == "live":
                 from .orders import close_all
