@@ -3,6 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from . import indicators as I
+from contextlib import suppress
+from .indicators import _is_na
 
 _ALIASES = {
     "oscMode": "osc_mode", "oscEntries": "osc_entries", "oscReentries": "osc_reentries",
@@ -33,16 +35,24 @@ def mval(manual: dict, *names, default=None):
 
 def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out = df.copy()
-    bb_len = int(p.get("bb_len", 100)); bb_dev = float(p.get("bb_dev", 1.5))
+    bb_len = int(p.get("bb_len", 100))
+    bb_dev = float(p.get("bb_dev", 1.5))
     range_len = int(p.get("range_len", 200))
-    fib_u = float(p.get("fib_upper", 0.236)); fib_l = float(p.get("fib_lower", 0.786))
-    smooth = int(p.get("smooth_len", 3)); atr_len = int(p.get("atr_len", 14))
+    fib_u = float(p.get("fib_upper", 0.236))
+    fib_l = float(p.get("fib_lower", 0.786))
+    smooth = int(p.get("smooth_len", 3))
+    atr_len = int(p.get("atr_len", 14))
     regime_len = int(p.get("regime_len", 100))
-    adapt_min = float(p.get("adapt_min", 0.5)); adapt_max = float(p.get("adapt_max", 2.0))
-    f_atr_len = int(p.get("filter_atr_len", 5)); f_ma_len = int(p.get("filter_ma_len", 5))
-    f_ma = p.get("filter_ma_type", "EMA"); rsi_len = int(p.get("rsi_len", 7))
-    o_rsi = int(p.get("osc_rsi_len", 14)); o_st = int(p.get("osc_stoch_len", 14))
-    o_k = int(p.get("osc_k_len", 3)); o_d = int(p.get("osc_d_len", 3))
+    adapt_min = float(p.get("adapt_min", 0.5))
+    adapt_max = float(p.get("adapt_max", 2.0))
+    f_atr_len = int(p.get("filter_atr_len", 5))
+    f_ma_len = int(p.get("filter_ma_len", 5))
+    f_ma = p.get("filter_ma_type", "EMA")
+    rsi_len = int(p.get("rsi_len", 7))
+    o_rsi = int(p.get("osc_rsi_len", 14))
+    o_st = int(p.get("osc_stoch_len", 14))
+    o_k = int(p.get("osc_k_len", 3))
+    o_d = int(p.get("osc_d_len", 3))
     vol_len = int(p.get("volume_len", 20))
     out["mid"] = I.sma(out["close"], bb_len)
     out["sd"] = out["close"].rolling(bb_len, min_periods=bb_len).std(ddof=0)
@@ -75,13 +85,13 @@ def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out["piv_high"] = I.pivothigh(out["high"], piv)
     return out
 
-def _refs(style: str, l: float, h: float, el: float, eh: float, al: float, ah: float) -> tuple[float, float]:
+def _refs(style: str, low: float, high: float, el: float, eh: float, al: float, ah: float) -> tuple[float, float]:
     if style == "Sharp":
-        return l, h
+        return low, high
     if style == "Balanced":
-        return (el if el == el else l), (eh if eh == eh else h)
+        return (el if not _is_na(el) else low), (eh if not _is_na(eh) else high)
     # Smooth: regime-adaptive filter (Pine adaptiveLow/adaptiveHigh)
-    return (al if al == al else l), (ah if ah == ah else h)
+    return (al if not _is_na(al) else low), (ah if not _is_na(ah) else high)
 
 def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     """Pine pivot divergences + S/R levels. Returns (bull_age, bear_age, sup, res) arrays."""
@@ -103,17 +113,17 @@ def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     cur_sup = np.nan
     cur_res = np.nan
     for i in range(n):
-        if pl[i] == pl[i]:
+        if not _is_na(pl[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if (prior_pl == prior_pl and pl[i] < prior_pl and prsi == prsi
-                    and prior_pl_rsi == prior_pl_rsi and prsi > prior_pl_rsi):
+            if (not _is_na(prior_pl) and pl[i] < prior_pl and not _is_na(prsi)
+                    and not _is_na(prior_pl_rsi) and prsi > prior_pl_rsi):
                 last_bull = i
             prior_pl, prior_pl_rsi = pl[i], prsi
             cur_sup = pl[i]
-        if ph[i] == ph[i]:
+        if not _is_na(ph[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if (prior_ph == prior_ph and ph[i] > prior_ph and prsi == prsi
-                    and prior_ph_rsi == prior_ph_rsi and prsi < prior_ph_rsi):
+            if (not _is_na(prior_ph) and ph[i] > prior_ph and not _is_na(prsi)
+                    and not _is_na(prior_ph_rsi) and prsi < prior_ph_rsi):
                 last_bear = i
             prior_ph, prior_ph_rsi = ph[i], prsi
             cur_res = ph[i]
@@ -128,11 +138,9 @@ def session_allows(now_utc, manual: dict) -> bool:
     """Pine session filter: days (1=Sunday) + HHMM-HHMM range, 0000-0000 = all day."""
     if not manual.get("session_on", False):
         return True
-    try:
+    with suppress(Exception):
         import zoneinfo
         now_utc = now_utc.astimezone(zoneinfo.ZoneInfo(str(manual.get("session_zone", "Etc/UTC"))))
-    except Exception:
-        pass
     days = manual.get("session_days", [1, 2, 3, 4, 5, 6, 7])
     if now_utc.isoweekday() % 7 + 1 not in days:
         return False
@@ -184,7 +192,8 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     bounce_on = bool(p.get("bounce_on", False))
     sr_on = bool(p.get("sr_bounce_on", False))
     zone = float(p.get("zone_atr", 0.25))
-    lines: list[float] = []; dirs: list[int] = []
+    lines: list[float] = []
+    dirs: list[int] = []
     turns_l, turns_s = [], []
     bounce_l, bounce_s = [], []
     tnums: list[int] = []
@@ -193,13 +202,13 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     for i in range(len(out)):
         th_u = out["bb_up"].iloc[i] if basis == "Bollinger" else out["upper"].iloc[i]
         th_d = out["bb_dn"].iloc[i] if basis == "Bollinger" else out["lower"].iloc[i]
-        c, h, l = out["close"].iloc[i], out["high"].iloc[i], out["low"].iloc[i]
+        c, h, lo = out["close"].iloc[i], out["high"].iloc[i], out["low"].iloc[i]
         atr_v = out["atr"].iloc[i]
         brk = 1 if c > th_u else (-1 if c < th_d else 0)
-        lc, hc = _refs(style, l, h, out["ema_low"].iloc[i], out["ema_high"].iloc[i],
+        lc, hc = _refs(style, lo, h, out["ema_low"].iloc[i], out["ema_high"].iloc[i],
                         out["ad_low"].iloc[i], out["ad_high"].iloc[i])
         buf = atr_v * buf_mult if buf_on else 0.0
-        if prev_line != prev_line:
+        if _is_na(prev_line):
             prev_line = lc if brk == 1 else (hc if brk == -1 else c)
         if brk == 1:
             line = max(prev_line, lc - buf)
@@ -214,19 +223,22 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
             tnum += 1
         if mode == "Channel":
             lower, upper = out["lower"].iloc[i], out["upper"].iloc[i]
-            touched = (l <= lower) and (h >= upper)
-            tl = (not touched) and (l <= lower) and (c > lower)
+            touched = (lo <= lower) and (h >= upper)
+            tl = (not touched) and (lo <= lower) and (c > lower)
             ts = (not touched) and (h >= upper) and (c < upper)
-        touch_l = (d == 1) and ((bounce_on and l <= line and c > line)
-                                or (sr_on and sup[i] == sup[i] and atr_v == atr_v
-                                    and l <= sup[i] + atr_v * zone and c > sup[i] + atr_v * zone))
+        touch_l = (d == 1) and ((bounce_on and lo <= line and c > line)
+                                or (sr_on and not _is_na(sup[i]) and not _is_na(atr_v)
+                                    and lo <= sup[i] + atr_v * zone and c > sup[i] + atr_v * zone))
         touch_s = (d == -1) and ((bounce_on and h >= line and c < line)
-                                 or (sr_on and res[i] == res[i] and atr_v == atr_v
+                                 or (sr_on and not _is_na(res[i]) and not _is_na(atr_v)
                                      and h >= res[i] - atr_v * zone and c < res[i] - atr_v * zone))
         bounce_l.append(adv and touch_l and not prev_touch_l)
         bounce_s.append(adv and touch_s and not prev_touch_s)
         prev_touch_l, prev_touch_s = touch_l, touch_s
-        lines.append(line); dirs.append(d); turns_l.append(tl); turns_s.append(ts)
+        lines.append(line)
+        dirs.append(d)
+        turns_l.append(tl)
+        turns_s.append(ts)
         tnums.append(tnum)
         prev_line, prev_dir = line, d
     out["trend_line"], out["trend_dir"] = lines, dirs

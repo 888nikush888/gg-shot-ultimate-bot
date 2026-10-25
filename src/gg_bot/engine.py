@@ -12,6 +12,7 @@ from .state import connect, audit, save_open, load_open, clear_open
 from . import exchanges as X
 from . import telegram as TG
 from .logging_setup import get_logger
+from contextlib import suppress
 
 log = get_logger("engine")
 
@@ -90,8 +91,9 @@ def cached_equity(key: str, ex, symbol: str, mode: str, ttl: float = 60.0) -> fl
     return v
 
 def save_open_if_changed(db, exchange: str, symbol: str, payload: dict, cache: dict[str, str]) -> bool:
-    import hashlib as _h, json as _j
-    h = _h.md5(_j.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
+    import hashlib as _h
+    import json as _j
+    h = _h.sha256(_j.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
     k = exchange + ":" + symbol
     if cache.get(k) == h:
         return False
@@ -110,13 +112,11 @@ KNOWN_MANUAL_KEYS = frozenset(["mode","timing","allow_long","allow_short","sizin
 def unknown_manual_keys(manual: dict, known: frozenset = KNOWN_MANUAL_KEYS) -> list[str]:
     from . import presets as _pp
     base: set[str] = set(known)
-    try:
+    with suppress(Exception):
         db = _pp.load_presets()
         for _k, _v in db.items():
             if not _k.startswith("_") and isinstance(_v, dict):
                 base.update(_v.keys())
-    except Exception:
-        pass
     return sorted(set((manual or {}).keys()) - base)
 
 
@@ -402,13 +402,11 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
         TG.send(f"Bot gestartet (LIVE): {len(cfg.symbols)} Symbole")
     cycle_no = 0
     _known = set()
-    try:
+    with suppress(Exception):
         from .presets import load_presets as _lp
         for _k, _v in _lp().items():
             if not _k.startswith("_") and isinstance(_v, dict):
                 _known.update(_v.keys())
-    except Exception:
-        pass
     _known.update(["mode","timing","allow_long","allow_short","sizing","risk_pct","capital_pct","legs","entry_mode","entry_unit","pullback_distance","limit_life","tp_weights","fee_pct","be_r","trail_r","trail_start","tp_mode_1","tp_mode_2","tp_mode_3","tp_mode_4","bounce_on","sr_bounce_on","reentry_on","max_reentries","zone_atr","osc_mode","osc_entries","osc_reentries","osc_exit","osc_exit_after","osc_rsi_len","osc_stoch_len","osc_k_len","osc_d_len","osc_low","osc_high","div_mode","div_age","pivot_len","session_on","trade_session","session_days","session_zone","date_start","date_end","close_session","volume_len","tp_adapt_min","tp_adapt_max","profit_trail_1","profit_trail_2","profit_trail_3","profit_trail_4","profit_trail_unit","stop_pad_ticks","atr_len","regime_len","adapt_min","adapt_max"])
     _unknown = sorted(set((cfg.manual or {}).keys()) - _known)
     if _unknown:
@@ -471,10 +469,8 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     elif _pt.time() >= float(cycle.get("deadline", 0)):
                         if cfg.mode == "live":
                             from .orders import cancel_open as _cancel
-                            try:
+                            with suppress(Exception):
                                 _cancel(ex, s.symbol)
-                            except Exception:
-                                pass
                         clear_open(db, s.exchange, s.symbol)
                         audit(db, "engine", "expired", f"{s.exchange} {s.symbol} pullback-limit abgelaufen")
                         cycle = None
@@ -487,15 +483,13 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         continue
                     # refresh entry from broker once (avg fill)
                     if cfg.mode == "live" and not cycle.get("entry_synced"):
-                        try:
+                        with suppress(Exception):
                             for p in ex.fetch_positions([s.symbol]):
                                 ep = float(p.get("entryPrice") or 0)
                                 if ep > 0:
                                     cycle["entry"] = ep
                                     break
                             cycle["entry_synced"] = True
-                        except Exception:
-                            pass
                     ev = monitor(cycle, price, ex_hi, ex_lo, sig["atr"], sig["trend_line"], sig, cfg.manual or {})
                     for qty, px, reason in ev["closes"]:
                         if not send_market_close(s.order_mode, reason, cfg.mode == "live"):
@@ -603,10 +597,8 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         except Exception as e:
                             log.error("bracket failed, closing entry", extra={"symbol": s.symbol, "error": str(e)})
                             from .orders import close_position
-                            try:
+                            with suppress(Exception):
                                 close_position(ex, s.symbol, want, qty)
-                            except Exception:
-                                pass
                             continue
                 if _is_pullback:
                     import time as _pb
@@ -624,8 +616,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                 raise
             except Exception as e:
                 log.error("symbol loop error", extra={"symbol": s.symbol, "error": str(e)})
-                if cfg.telegram.enabled and cfg.telegram.notify_errors:
-                    if should_send_error(err_sent, key, time.time()):
+                if cfg.telegram.enabled and cfg.telegram.notify_errors and should_send_error(err_sent, key, time.time()):
                         TG.send(f"FEHLER {s.exchange} {s.symbol}: {e}")
         # auto kill-switch: close everything
         if risk.killed and not getattr(run_loop, "_kill_closed", False):
@@ -633,10 +624,8 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
             for s in cfg.symbols:
                 if s.enabled and cfg.mode == "live":
                     from .orders import close_all
-                    try:
+                    with suppress(Exception):
                         close_all(ex_map[s.exchange], s.symbol)
-                    except Exception:
-                        pass
             if cfg.telegram.enabled and cfg.telegram.notify_kill:
                 TG.killed(risk.kill_reason)
         if once:
@@ -677,19 +666,15 @@ def move_native_stop(ex, symbol: str, cycle: dict) -> None:
         exit_side = "sell" if side == "long" else "buy"
         cancelled = False
         if cycle.get("stop_order_id"):
-            try:
+            with suppress(Exception):
                 ex.cancel_order(cycle["stop_order_id"], symbol)
                 cancelled = True
-            except Exception:
-                pass
         if not cancelled:
             for o in ex.fetch_open_orders(symbol):
                 blob = str(o.get("type", "")) + str(o.get("info", ""))
                 if "stop" in blob.lower() or "trigger" in blob.lower():
-                    try:
+                    with suppress(Exception):
                         ex.cancel_order(o["id"], symbol)
-                    except Exception:
-                        pass
         live = abs(X.fetch_position_qty(ex, symbol))
         remaining = live if live > 0 else sum(t["qty"] for t in cycle["tps"] if not t["hit"])
         if remaining > 0:

@@ -1,6 +1,5 @@
 import inspect
 import pandas as pd
-import typer
 from gg_bot.orders import stop_market_type
 from gg_bot.engine import send_market_close, closed_frame, meets_min_notional, should_send_error, cached_equity, save_open_if_changed, _EQ_CACHE
 from gg_bot import cli
@@ -100,7 +99,8 @@ def test_leverage_range_rejected():
     assert SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=125).leverage == 125
 
 def test_backtest_tolerates_none_manual():
-    import numpy as np, pandas as pd
+    import numpy as np
+    import pandas as pd
     from gg_bot.backtest import run
     n = 60
     px = 100 + np.cumsum(np.random.RandomState(7).randn(n))

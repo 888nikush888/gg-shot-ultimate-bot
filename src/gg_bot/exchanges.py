@@ -1,5 +1,6 @@
 """CCXT factory for hyperliquid + aster + binance (perps). Paper mode works keyless."""
 from __future__ import annotations
+from contextlib import suppress
 import os
 
 def build(name: str, testnet: bool = False, need_auth: bool = True):
@@ -18,7 +19,8 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
             ex.set_sandbox_mode(True)
         return ex
     if name == "aster":
-        key = os.getenv("ASTER_API_KEY", ""); sec = os.getenv("ASTER_API_SECRET", "")
+        key = os.getenv("ASTER_API_KEY", "")
+        sec = os.getenv("ASTER_API_SECRET", "")
         params: dict = {"options": {"defaultType": "swap"}}
         if key and sec:
             params.update({"apiKey": key, "secret": sec})
@@ -29,7 +31,8 @@ def build(name: str, testnet: bool = False, need_auth: bool = True):
             ex.set_sandbox_mode(True)
         return ex
     if name == "binance":
-        key = os.getenv("BINANCE_API_KEY", ""); sec = os.getenv("BINANCE_API_SECRET", "")
+        key = os.getenv("BINANCE_API_KEY", "")
+        sec = os.getenv("BINANCE_API_SECRET", "")
         params = {"options": {"defaultType": "swap"}}
         if key and sec:
             params.update({"apiKey": key, "secret": sec})
@@ -61,14 +64,12 @@ def set_leverage(ex, symbol: str, leverage: int) -> bool:
 
 def fetch_position_qty(ex, symbol: str) -> float:
     """Signed open contracts for symbol (0 when flat). Never raises."""
-    try:
+    with suppress(Exception):
         for p in ex.fetch_positions([symbol]):
             if p.get("symbol") == symbol or symbol in str(p.get("symbol")):
                 amt = float(p.get("contracts") or 0)
                 if amt:
                     return amt if p.get("side") == "long" else -amt
-    except Exception:
-        pass
     return 0.0
 
 def price_tick(ex, symbol: str) -> float | None:

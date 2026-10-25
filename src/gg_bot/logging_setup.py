@@ -1,6 +1,8 @@
 """JSON structured logging with secret redaction."""
 from __future__ import annotations
-import logging, sys, re
+import logging
+import sys
+import re
 import structlog
 
 _REDACT = [

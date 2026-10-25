@@ -13,6 +13,8 @@ jobs:
           python-version: "3.13"
       - name: Install deps
         run: pip install -r requirements.txt
+      - name: Lint (ruff, default rules)
+        run: pip install ruff==0.15.7 && ruff check src tests
       - name: Unit tests
         run: PYTHONPATH=src pytest tests -q
       - name: Config validate (offline)
@@ -27,3 +29,4 @@ jobs:
         run: docker build -t gg-shot:test .
       - name: Healthcheck inside image
         run: docker run --rm -e BOT_MODE=paper gg-shot:test healthcheck --config /app/config/config.example.yaml
+

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
+from contextlib import suppress
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS cycles(id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, exchange TEXT, symbol TEXT, side INTEGER, entry REAL, stop REAL, qty REAL, pnl REAL, note TEXT);
@@ -57,10 +58,8 @@ def engage_kill_flag(state_path: str, reason: str) -> None:
     kill_flag_path(state_path).write_text(reason[:200], encoding="utf-8")
 
 def clear_kill_flag(state_path: str) -> None:
-    try:
+    with suppress(FileNotFoundError):
         kill_flag_path(state_path).unlink()
-    except FileNotFoundError:
-        pass
 
 def kill_flag_reason(state_path: str) -> str | None:
     try:
