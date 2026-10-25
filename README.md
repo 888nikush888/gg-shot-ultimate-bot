@@ -44,3 +44,7 @@ Engine: Closed-Candle-Signale (kein Repaint), Trendlinie/Breakout, ATR/RSI/Volum
 - **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); `leverage` 1-50 (Config-Validierung); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
 - **Order-Guards:** Entries unter Exchange-Minimum (`min_amount`/`min_cost`) werden geskippt; in `exchange_native` werden TP/SL/BE/TRAIL nur gebucht (Ausfuehrung nativ, kein Doppel-Exit), der Boersen-SL wird per Order-ID nachgezogen; Fehlermeldungen max. 1x pro Symbol und Viertelstunde; Equity wird 60 s gecacht.
 - **Presets:** 78 Keys (26 Assets x 3 Timeframes) + Finetune-Overrides. Tages-PnL setzt sich bei Neustart zurueck (Limit gilt pro Laufzeit).
+## Dashboard (empfohlen)
+Interaktives Terminal-UI — einzige Bedienoberflaeche. Start lokal oder im Container:
+`docker exec -it gg-bot python -m gg_bot dashboard` (braucht `-it`; im Docker-Desktop-Exec-Tab kann die Darstellung verwaschen sein — Windows-Terminal/SSH bevorzugen).
+Beim ersten Start Login einrichten: `python -m gg_bot dashboard-hash-password` erzeugt die `DASHBOARD_PASSWORD_HASH`-Zeile fuer `.env`. Tabs: Overview, Positionen (schliessen mit Bestaetigung), Presets (filtern, Vorschau, Anwaenden), Steuerung (Mode, Symbole an/aus, Kill, Telegram-Test), Backtest, Ereignisse. Schreiben geht immer mit Backup + Validierung.

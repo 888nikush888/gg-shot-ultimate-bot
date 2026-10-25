@@ -37,3 +37,31 @@ def clear_open(c: sqlite3.Connection, exchange: str, symbol: str) -> None:
     c.execute("DELETE FROM open_cycles WHERE exchange=? AND symbol=?", (exchange, symbol))
     c.commit()
 
+def list_open_cycles(c: sqlite3.Connection) -> list[dict]:
+    rows = c.execute("SELECT exchange, symbol, payload, updated FROM open_cycles ORDER BY symbol").fetchall()
+    out = []
+    for e, s, pl, u in rows:
+        try:
+            payload = json.loads(pl)
+        except Exception:
+            payload = {}
+        out.append({"exchange": e, "symbol": s, "payload": payload, "updated": u})
+    return out
+
+def kill_flag_path(state_path: str) -> Path:
+    return Path(state_path).parent / "kill.flag"
+
+def engage_kill_flag(state_path: str, reason: str) -> None:
+    kill_flag_path(state_path).write_text(reason[:200], encoding="utf-8")
+
+def clear_kill_flag(state_path: str) -> None:
+    try:
+        kill_flag_path(state_path).unlink()
+    except FileNotFoundError:
+        pass
+
+def kill_flag_reason(state_path: str) -> str | None:
+    try:
+        return kill_flag_path(state_path).read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None

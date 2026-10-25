@@ -60,6 +60,18 @@ def load_config(path: str | Path) -> AppCfg:
         raw["mode"] = env_mode
     return AppCfg.model_validate(raw)
 
+def save_config(cfg: AppCfg, path: str | Path) -> Path:
+    """Validate, back up, write, re-validate. Returns backup path."""
+    import datetime
+    p = Path(path)
+    backup = p.with_name(p.name + ".bak." + datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+    if p.exists():
+        backup.write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
+    p.write_text(__import__("yaml").safe_dump(cfg.model_dump(), sort_keys=False, allow_unicode=True), encoding="utf-8")
+    load_config(p)  # re-validate; raises on bad write
+    return backup
+
+
 def redacted_dict(cfg: AppCfg) -> dict[str, Any]:
     d = cfg.model_dump()
     return d
