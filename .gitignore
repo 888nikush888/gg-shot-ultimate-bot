@@ -10,3 +10,4 @@ config/config.yaml
 
 audit*_out.txt
 joblog.txt
+/*.log
