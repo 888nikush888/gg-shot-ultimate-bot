@@ -25,6 +25,22 @@ def place_bracket(ex, symbol: str, side: str, total_qty: float, stop: float,
                                         {"reduceOnly": True, "clientOrderId": client_id(cycle, 0, j)}))
     return outs
 
+def cancel_open(ex, symbol: str) -> int:
+    """Cancel all open (pending entry/stop) orders. Returns cancelled count."""
+    try:
+        orders = ex.fetch_open_orders(symbol)
+    except Exception:
+        return 0
+    n = 0
+    for o in orders:
+        try:
+            ex.cancel_order(o["id"], symbol)
+            n += 1
+        except Exception:
+            pass
+    return n
+
+
 def close_position(ex, symbol: str, side: str, qty: float, cid: str = "") -> dict | None:
     if qty <= 0:
         return None

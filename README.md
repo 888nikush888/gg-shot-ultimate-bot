@@ -44,6 +44,13 @@ Engine: Closed-Candle-Signale (kein Repaint), Trendlinie/Breakout, ATR/RSI/Volum
 - **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); `leverage` 1-50 (Config-Validierung); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
 - **Order-Guards:** Entries unter Exchange-Minimum (`min_amount`/`min_cost`) werden geskippt; in `exchange_native` werden TP/SL/BE/TRAIL nur gebucht (Ausfuehrung nativ, kein Doppel-Exit), der Boersen-SL wird per Order-ID nachgezogen; Fehlermeldungen max. 1x pro Symbol und Viertelstunde; Equity wird 60 s gecacht.
 - **Presets:** 78 Keys (26 Assets x 3 Timeframes) + Finetune-Overrides. Tages-PnL setzt sich bei Neustart zurueck (Limit gilt pro Laufzeit).
+## Einstellungen (alles einstellbar, Presets fuellen)
+`config/config.example.yaml` -> `manual:` enthaelt jede Pine-Einstellung mit Pine-Default. Die `presets.json`-Tabellen (Signal/Filter/TP-SL/Trail + Finetune) fuellen die 35 Preset-Felder pro Asset/Timeframe; `manual` ueberschreibt gezielt (Kamel-Schreibweise wie in Pine wird automatisch erkannt, z. B. `oscMode`).
+- **Oszillator/Divergenzen:** `osc_mode` (`Aus`/`Beide Richtungen`/`Mit Haupttrend`), `osc_entries`, `osc_reentries`, `osc_exit` + `osc_exit_after`, Langen/Zonen, `div_mode` (`Aus`/`Anzeige`/`Filter`) + `div_age`.
+- **Trend/Modus:** `mode` (`Standard`/`Advanced`/`Channel`), `timing` (`Kerzenschluss` = kein Repaint, `Echtzeit`), `allow_long`/`allow_short`, `bounce_on`/`sr_bounce_on`/`reentry_on`/`max_reentries` (nur Advanced wirksam).
+- **Session/Datum:** `session_on`, `trade_session`, `session_days`, `session_zone`, `date_start`/`date_end`, `close_session` — ohne Session kein Entry, mit `close_session` wird bei Sessionende geschlossen.
+- **Einstieg:** `entry_mode` `Market` oder `Pullback-Limit` (Limit-Abstand via `entry_unit`/`pullback_distance`, Gueltigkeit `limit_life` Kerzen, danach Storno ohne Cooldown).
+- **Fail-fast statt falsch rechnen:** `legs` != 1 (Gestaffelt), `mode: Classic`, `tp_mode_*` != Fest, `leverage` ausserhalb 1-125 und unbekannte Exchanges brechen beim Start mit klarer Meldung ab.
 ## Dashboard (empfohlen)
 Interaktives Terminal-UI — einzige Bedienoberflaeche. Start lokal oder im Container:
 `docker exec -it gg-bot python -m gg_bot dashboard` (braucht `-it`; im Docker-Desktop-Exec-Tab kann die Darstellung verwaschen sein — Windows-Terminal/SSH bevorzugen).

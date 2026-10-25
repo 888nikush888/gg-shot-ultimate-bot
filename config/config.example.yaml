@@ -14,20 +14,58 @@ telegram:
   notify_kill: true
   notify_errors: true
 manual:
-  sizing: Stoprisiko
+  # --- Allgemein / Modus ---
+  mode: Standard            # Standard | Advanced (Bounce/Reentry) | Channel (Classic = Fail-fast)
+  timing: Kerzenschluss     # Kerzenschluss (kein Repaint) | Echtzeit
+  allow_long: true
+  allow_short: true
+  # --- Einstieg ---
+  sizing: Stoprisiko        # Stoprisiko | Kapitalanteil
   risk_pct: 1.0
   capital_pct: 10.0
-  legs: 1               # fixiert: nur 1 Entry-Leg wird unterstuetzt
-  entry_mode: Market    # fixiert: nur Market wird unterstuetzt
+  legs: 1                  # fixiert: nur 1 (Gestaffelt braucht Leg-Engine -> Fail-fast)
+  entry_mode: Market       # Market | Pullback-Limit (Gestaffelt -> Fail-fast)
+  entry_unit: ATR           # ATR | Prozent (nur Pullback-Limit)
+  pullback_distance: 0.5    # nur Pullback-Limit
+  limit_life: 10           # Kerzen Gueltigkeit fuer Pullback-Limits
   tp_weights: [30, 25, 15, 10]
   fee_pct: 0.05
-  be_r: 1.0
-  trail_r: 1.0
-  osc_mode: Aus
-  osc_exit_after: Nach TP1
-  pivot_len: 5
+  be_r: 1.0                # Break-even ab R (wenn be_mode=R)
+  trail_r: 1.0             # Trailing ab R (wenn trailStart=R; Start ist sonst TP1)
+  tp_mode_1: Fest           # fixiert: nur Fest (ATR-adaptiv/Gewinn-Trailing -> Fail-fast)
+  tp_mode_2: Fest
+  tp_mode_3: Fest
+  tp_mode_4: Fest
+  # --- Trend / Bounce / Reentry (nur mode Advanced wirksam) ---
+  bounce_on: false
+  sr_bounce_on: false
+  reentry_on: false
+  max_reentries: 1
+  zone_atr: 0.25
+  # --- Oszillator ---
+  osc_mode: Aus             # Aus | Beide Richtungen | Mit Haupttrend
+  osc_entries: false
+  osc_reentries: false
+  osc_exit: true
+  osc_exit_after: Nach TP1  # Immer | Im Gewinn | Nach TP1
+  osc_rsi_len: 14
+  osc_stoch_len: 14
+  osc_k_len: 3
+  osc_d_len: 3
   osc_low: 20
   osc_high: 80
+  # --- Divergenzen ---
+  div_mode: Aus             # Aus | Anzeige | Filter
+  div_age: 20
+  pivot_len: 5
+  # --- Session / Datum ---
+  session_on: false
+  trade_session: "0000-0000"   # HHMM-HHMM, Etc/UTC
+  session_days: [1, 2, 3, 4, 5, 6, 7]   # 1=Sonntag
+  session_zone: Etc/UTC
+  date_start: "2020-01-01"
+  date_end: "2099-01-01"
+  close_session: false
 symbols:
   - exchange: hyperliquid
     symbol: BTC/USDC:USDC
