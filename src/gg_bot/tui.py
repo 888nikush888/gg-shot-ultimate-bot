@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import os
+import time
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
@@ -241,13 +242,12 @@ class DashboardApp(App):
             )
 
     def _live_qty(self, exchange: str, symbol: str) -> str:
-        import time as _t
         from . import exchanges as X
 
         if not hasattr(self, "_ex_cache"):
             self._ex_cache = {}
             self._qty_cache = {}
-        now = _t.time()
+        now = time.time()
         hit = self._qty_cache.get(exchange + ":" + symbol)
         if hit and now - hit[0] < 30.0:
             return hit[1]
@@ -324,7 +324,6 @@ class DashboardApp(App):
         return await self.push_screen(ConfirmModal(message))
 
     def _save(self, note: str = "Restart engine to apply.") -> None:
-        import os
         from .config import save_config
 
         save_config(self.cfg, self._config_path)

@@ -10,6 +10,7 @@ from gg_bot.engine import (
 from gg_bot.state import connect
 from gg_bot.config import load_config
 import os
+import tempfile
 
 
 def _cyc(**kw):
@@ -148,11 +149,9 @@ def test_session_zone_day_boundary():
 
 
 def test_audit_retention(tmp_path_factory=None):
-    import tempfile
-    import os as _os
 
     d = tempfile.mkdtemp()
-    p = _os.path.join(d, "t.db")
+    p = os.path.join(d, "t.db")
     c = connect(p, audit_keep=2)
     for i in range(3):
         c.execute("INSERT INTO audit VALUES (?,?,?,?)", ("t", "a", "x", str(i)))
@@ -164,12 +163,10 @@ def test_audit_retention(tmp_path_factory=None):
 
 
 def test_save_config_roundtrip():
-    import tempfile
-    import os as _os
 
     d = tempfile.mkdtemp()
     src = open("config/config.example.yaml", encoding="utf-8").read()
-    p = _os.path.join(d, "config.yaml")
+    p = os.path.join(d, "config.yaml")
     open(p, "w", encoding="utf-8").write(src)
     cfg = load_config(p)
     cfg.poll_seconds = 21
