@@ -45,14 +45,12 @@ def _frame(
 
 
 def _eval(frame, manual, trend_entries=0, preset=None):
-    import gg_bot.strategy as _S
-
-    orig = _S.trend_signals
-    _S.trend_signals = lambda df, p: frame
+    orig = S.trend_signals
+    S.trend_signals = lambda df, p: frame
     try:
         return evaluate(frame, preset or {}, manual, trend_entries)
     finally:
-        _S.trend_signals = orig
+        S.trend_signals = orig
 
 
 BASE = {"filter_mode": "Aus"}

@@ -1,10 +1,10 @@
 """Signal core: trendline/breakout, filters, oscillator, TP/BE/trailing math (Pine parity)."""
 
 from __future__ import annotations
+from contextlib import suppress
 import numpy as np
 import pandas as pd
 from . import indicators as I
-from contextlib import suppress
 from .indicators import _is_na
 
 _ALIASES = {
@@ -131,6 +131,14 @@ def _refs(
     return (al if not _is_na(al) else low), (ah if not _is_na(ah) else high)
 
 
+def _div_hit(bull, piv_v, prior_v, rsi_v, prior_rsi_v) -> bool:
+    if _is_na(prior_v) or _is_na(rsi_v) or _is_na(prior_rsi_v):
+        return False
+    if bull:
+        return piv_v < prior_v and rsi_v > prior_rsi_v
+    return piv_v > prior_v and rsi_v < prior_rsi_v
+
+
 def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     """Pine pivot divergences + S/R levels. Returns (bull_age, bear_age, sup, res) arrays."""
     piv = int(p.get("pivot_len", 5))
@@ -153,25 +161,13 @@ def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     for i in range(n):
         if not _is_na(pl[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if (
-                not _is_na(prior_pl)
-                and pl[i] < prior_pl
-                and not _is_na(prsi)
-                and not _is_na(prior_pl_rsi)
-                and prsi > prior_pl_rsi
-            ):
+            if _div_hit(True, pl[i], prior_pl, prsi, prior_pl_rsi):
                 last_bull = i
             prior_pl, prior_pl_rsi = pl[i], prsi
             cur_sup = pl[i]
         if not _is_na(ph[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if (
-                not _is_na(prior_ph)
-                and ph[i] > prior_ph
-                and not _is_na(prsi)
-                and not _is_na(prior_ph_rsi)
-                and prsi < prior_ph_rsi
-            ):
+            if _div_hit(False, ph[i], prior_ph, prsi, prior_ph_rsi):
                 last_bear = i
             prior_ph, prior_ph_rsi = ph[i], prsi
             cur_res = ph[i]
@@ -252,6 +248,12 @@ def _trend_line(prev_line, prev_dir, brk, lc, hc, buf, c):
     return line, d, tl, ts, (tl or ts) and d != prev_dir
 
 
+def _channel_turns(touched, lo, lower, c, h, upper):
+    tl = (not touched) and (lo <= lower < c)
+    ts = (not touched) and (c < upper <= h)
+    return tl, ts
+
+
 def _trend_touch(d, c, h, lo, line, sup_v, res_v, atr_v, zone, bounce_on, sr_on):
     # Bounce/S-R-Touch je Bar: gibt (touch_l, touch_s) zurueck.
     touch_l = (d == 1) and (
@@ -272,6 +274,12 @@ def _trend_touch(d, c, h, lo, line, sup_v, res_v, atr_v, zone, bounce_on, sr_on)
             and c < res_v - atr_v * zone <= h
         )
     )
+    return touch_l, touch_s
+
+
+def _bounce_edge(adv, touch_l, touch_s, prev_l, prev_s, bounce_l, bounce_s):
+    bounce_l.append(adv and touch_l and not prev_l)
+    bounce_s.append(adv and touch_s and not prev_s)
     return touch_l, touch_s
 
 
@@ -321,14 +329,13 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
         if mode == "Channel":
             lower, upper = out["lower"].iloc[i], out["upper"].iloc[i]
             touched = (lo <= lower) and (h >= upper)
-            tl = (not touched) and (lo <= lower) and (c > lower)
-            ts = (not touched) and (h >= upper) and (c < upper)
+            tl, ts = _channel_turns(touched, lo, lower, c, h, upper)
         touch_l, touch_s = _trend_touch(
             d, c, h, lo, line, sup[i], res[i], atr_v, zone, bounce_on, sr_on
         )
-        bounce_l.append(adv and touch_l and not prev_touch_l)
-        bounce_s.append(adv and touch_s and not prev_touch_s)
-        prev_touch_l, prev_touch_s = touch_l, touch_s
+        prev_touch_l, prev_touch_s = _bounce_edge(
+            adv, touch_l, touch_s, prev_touch_l, prev_touch_s, bounce_l, bounce_s
+        )
         lines.append(line)
         dirs.append(d)
         turns_l.append(tl)
