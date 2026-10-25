@@ -79,44 +79,46 @@ def compute_frame(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     o_k = int(p.get("osc_k_len", 3))
     o_d = int(p.get("osc_d_len", 3))
     vol_len = int(p.get("volume_len", 20))
-    out["mid"] = I.sma(out["close"], bb_len)
-    out["sd"] = out["close"].rolling(bb_len, min_periods=bb_len).std(ddof=0)
-    out["atr"] = I.atr(out["high"], out["low"], out["close"], atr_len)
-    out["atr_mean"] = out["atr"].rolling(regime_len, min_periods=regime_len).mean()
-    out["regime"] = (
+    out.loc[:, "mid"] = I.sma(out["close"], bb_len)
+    out.loc[:, "sd"] = out["close"].rolling(bb_len, min_periods=bb_len).std(ddof=0)
+    out.loc[:, "atr"] = I.atr(out["high"], out["low"], out["close"], atr_len)
+    out.loc[:, "atr_mean"] = (
+        out["atr"].rolling(regime_len, min_periods=regime_len).mean()
+    )
+    out.loc[:, "regime"] = (
         (out["atr"] / out["atr_mean"]).clip(adapt_min, adapt_max).fillna(1.0)
     )
     adapt = out["close"] * 0 + (1.0 if not p.get("adaptive_offset") else out["regime"])
-    out["bb_up"] = out["mid"] + out["sd"] * bb_dev * adapt
-    out["bb_dn"] = out["mid"] - out["sd"] * bb_dev * adapt
-    out["rh"] = I.highest(out["high"], range_len)
-    out["rl"] = I.lowest(out["low"], range_len)
-    out["rw"] = out["rh"] - out["rl"]
-    out["upper"] = out["rh"] - out["rw"] * fib_u
-    out["lower"] = out["rh"] - out["rw"] * fib_l
-    out["f_atr"] = I.atr(out["high"], out["low"], out["close"], f_atr_len)
+    out.loc[:, "bb_up"] = out["mid"] + out["sd"] * bb_dev * adapt
+    out.loc[:, "bb_dn"] = out["mid"] - out["sd"] * bb_dev * adapt
+    out.loc[:, "rh"] = I.highest(out["high"], range_len)
+    out.loc[:, "rl"] = I.lowest(out["low"], range_len)
+    out.loc[:, "rw"] = out["rh"] - out["rl"]
+    out.loc[:, "upper"] = out["rh"] - out["rw"] * fib_u
+    out.loc[:, "lower"] = out["rh"] - out["rw"] * fib_l
+    out.loc[:, "f_atr"] = I.atr(out["high"], out["low"], out["close"], f_atr_len)
     fe, fs = (
         I.ema(out["f_atr"], f_ma_len),
         out["f_atr"].rolling(f_ma_len, min_periods=f_ma_len).mean(),
     )
-    out["f_avg"] = fe if f_ma == "EMA" else fs
-    out["rsi"] = I.rsi_floor(out["close"], rsi_len)
-    out["vol_avg"] = (
+    out.loc[:, "f_avg"] = fe if f_ma == "EMA" else fs
+    out.loc[:, "rsi"] = I.rsi_floor(out["close"], rsi_len)
+    out.loc[:, "vol_avg"] = (
         out["volume"].rolling(vol_len, min_periods=vol_len).mean()
         if "volume" in out
         else float("nan")
     )
-    out["osc_rsi"] = I.rsi_floor(out["close"], o_rsi)
+    out.loc[:, "osc_rsi"] = I.rsi_floor(out["close"], o_rsi)
     k = I.stoch_k(out["osc_rsi"], out["osc_rsi"], out["osc_rsi"], o_st)
-    out["osc_k"] = k.rolling(o_k, min_periods=o_k).mean()
-    out["osc_d"] = out["osc_k"].rolling(o_d, min_periods=o_d).mean()
-    out["ema_low"] = I.ema(out["low"], smooth)
-    out["ema_high"] = I.ema(out["high"], smooth)
-    out["ad_low"] = I.adaptive_series(out["low"], out["regime"], smooth)
-    out["ad_high"] = I.adaptive_series(out["high"], out["regime"], smooth)
+    out.loc[:, "osc_k"] = k.rolling(o_k, min_periods=o_k).mean()
+    out.loc[:, "osc_d"] = out["osc_k"].rolling(o_d, min_periods=o_d).mean()
+    out.loc[:, "ema_low"] = I.ema(out["low"], smooth)
+    out.loc[:, "ema_high"] = I.ema(out["high"], smooth)
+    out.loc[:, "ad_low"] = I.adaptive_series(out["low"], out["regime"], smooth)
+    out.loc[:, "ad_high"] = I.adaptive_series(out["high"], out["regime"], smooth)
     piv = int(p.get("pivot_len", 5))
-    out["piv_low"] = I.pivotlow(out["low"], piv)
-    out["piv_high"] = I.pivothigh(out["high"], piv)
+    out.loc[:, "piv_low"] = I.pivotlow(out["low"], piv)
+    out.loc[:, "piv_high"] = I.pivothigh(out["high"], piv)
     return out
 
 
@@ -291,10 +293,10 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
         float(p.get("trend_buffer_mult", 1.0)),
     )
     bull_age, bear_age, sup, res = div_supres(out, p)
-    out["bull_div_age"] = bull_age
-    out["bear_div_age"] = bear_age
-    out["support"] = sup
-    out["resistance"] = res
+    out.loc[:, "bull_div_age"] = bull_age
+    out.loc[:, "bear_div_age"] = bear_age
+    out.loc[:, "support"] = sup
+    out.loc[:, "resistance"] = res
     mode = p.get("mode", "Standard")
     adv = mode == "Advanced"
     bounce_on = bool(p.get("bounce_on", False))
@@ -342,14 +344,17 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
         turns_s.append(ts)
         tnums.append(tnum)
         prev_line, prev_dir = line, d
-    out["trend_line"], out["trend_dir"] = lines, dirs
-    out["turn_long"], out["turn_short"] = turns_l, turns_s
-    out["bounce_long"], out["bounce_short"] = bounce_l, bounce_s
-    out["trend_no"] = tnums
-    out["osc_cross_up"] = I.crossover(out["osc_k"], out["osc_d"]) & (
+    out.loc[:, "trend_line"] = lines
+    out.loc[:, "trend_dir"] = dirs
+    out.loc[:, "turn_long"] = turns_l
+    out.loc[:, "turn_short"] = turns_s
+    out.loc[:, "bounce_long"] = bounce_l
+    out.loc[:, "bounce_short"] = bounce_s
+    out.loc[:, "trend_no"] = tnums
+    out.loc[:, "osc_cross_up"] = I.crossover(out["osc_k"], out["osc_d"]) & (
         out[["osc_k"]].min(axis=1) <= float(p.get("osc_low", 20))
     )
-    out["osc_cross_dn"] = I.crossunder(out["osc_k"], out["osc_d"]) & (
+    out.loc[:, "osc_cross_dn"] = I.crossunder(out["osc_k"], out["osc_d"]) & (
         out[["osc_k"]].max(axis=1) >= float(p.get("osc_high", 80))
     )
     return out
