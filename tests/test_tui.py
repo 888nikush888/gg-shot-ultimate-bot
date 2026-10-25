@@ -81,3 +81,23 @@ def test_kill_engage_reset_roundtrip():
         assert kill_flag_reason(app.cfg.state_path) is None
     finally:
         d.cleanup()
+
+
+def test_confirm_modal_returns_bool():
+    async def main():
+        d, p = _test_config()
+        try:
+            app = DashboardApp(p)
+            async with app.run_test() as pilot:
+                task = asyncio.ensure_future(app._confirm("Sicher?"))
+                await pilot.pause()
+                await pilot.click("#yes")
+                assert await task is True
+                task = asyncio.ensure_future(app._confirm("Sicher?"))
+                await pilot.pause()
+                await pilot.click("#no")
+                assert await task is False
+        finally:
+            d.cleanup()
+
+    asyncio.run(main())

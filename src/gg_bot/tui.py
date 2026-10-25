@@ -332,7 +332,14 @@ class DashboardApp(App):
 
     # ---------- actions ----------
     async def _confirm(self, message: str) -> bool:
-        return bool(await self.push_screen(ConfirmModal(message)))
+        fut: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
+
+        def _done(result: bool | None) -> None:
+            if not fut.done():
+                fut.set_result(bool(result))
+
+        self.push_screen(ConfirmModal(message), _done)
+        return await fut
 
     def _save(self, note: str = "Restart engine to apply.") -> None:
         from .config import save_config
