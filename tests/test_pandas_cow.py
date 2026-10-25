@@ -50,11 +50,13 @@ def test_pivot_values():
     s = pd.Series([5.0, 4.0, 3.0, 2.0, 1.0, 2.0, 3.0, 4.0, 5.0])
     got = _quiet(I.pivotlow, s, 2).tolist()
     assert all(np.isnan(v) for v in got[:6])
-    assert got[6] == 1.0 and all(np.isnan(v) for v in got[7:])
+    assert got[6] == 1.0
+    assert all(np.isnan(v) for v in got[7:])
     h = pd.Series([1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0])
     goth = _quiet(I.pivothigh, h, 2).tolist()
     assert all(np.isnan(v) for v in goth[:6])
-    assert goth[6] == 5.0 and all(np.isnan(v) for v in goth[7:])
+    assert goth[6] == 5.0
+    assert all(np.isnan(v) for v in goth[7:])
 
 
 def test_inputs_never_mutated():

@@ -6,15 +6,17 @@ import sys
 import re
 import structlog
 
+_MASK = r"\1***"
+
 _REDACT = [
-    (re.compile(r"(?i)(private[_-]?key['\"\s:=]+)([0-9a-fx]+)"), r"\1***"),
-    (re.compile(r"(?i)(api[_-]?secret['\"\s:=]+)([^'\"\s,}]+)"), r"\1***"),
-    (re.compile(r"(?i)(token['\"\s:=]+)([A-Za-z0-9:_-]{8,})"), r"\1***"),
+    (re.compile(r"(?i)(private[_-]?key['\"\s:=]+)([0-9a-fx]+)"), _MASK),
+    (re.compile(r"(?i)(api[_-]?secret['\"\s:=]+)([^'\"\s,}]+)"), _MASK),
+    (re.compile(r"(?i)(token['\"\s:=]+)([a-z0-9:_-]{8,})"), _MASK),
 ]
 
 
 def _redact(_, __, event_dict):
-    for k in list(event_dict.keys()):
+    for k in event_dict:
         lk = k.lower()
         if lk in (
             "private_key",

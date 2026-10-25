@@ -138,7 +138,9 @@ def test_pullback_anchor_and_resize():
 
 def test_manuell_defaults_and_aliases():
     p = get_preset("Manuell", "1h")
-    assert p["basis"] and p["stop_mode"] and p["be_mode"]
+    assert p["basis"]
+    assert p["stop_mode"]
+    assert p["be_mode"]
     m = S.normalize_manual(
         {"oscMode": "Beide Richtungen", "osc_mode": "Aus", "nonsense": 1}
     )
@@ -157,6 +159,8 @@ def test_div_supres_detects():
     df.loc[10, "piv_low"] = 90.0
     df.loc[30, "piv_low"] = 85.0
     bull, bear, sup, res = S.div_supres(df, {"pivot_len": 5})
-    assert bull[30] == 0 and bull[39] == 9
-    assert sup[39] == 85.0 and res[39] != res[39]
+    assert bull[30] == 0
+    assert bull[39] == 9
+    assert sup[39] == 85.0
+    assert pd.isna(res[39])
     assert np.all(np.isinf(bear))

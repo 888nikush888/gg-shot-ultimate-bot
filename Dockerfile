@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata ca-certi
 WORKDIR /app
 ENV PYTHONPATH=/app/src
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir --only-binary :all: -r /app/requirements.txt
 COPY src /app/src
 COPY config /app/config
 RUN chown -R botuser:botuser /app

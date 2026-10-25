@@ -81,6 +81,17 @@ class ConfirmModal(ModalScreen[bool]):
         self.dismiss(event.button.id == "yes")
 
 
+PS_ASSET_ID = "#ps-asset"
+
+
+def _cached_ex(ex_cache: dict, name: str, auth: bool):
+    from . import exchanges as X
+
+    if name not in ex_cache:
+        ex_cache[name] = X.build(name, need_auth=auth)
+    return ex_cache[name]
+
+
 class DashboardApp(App):
     TITLE = "GG-Shot Ultimate v6"
     CSS = CSS
@@ -185,7 +196,7 @@ class DashboardApp(App):
         from .presets import list_presets
 
         assets = sorted({k.rsplit("_", 1)[0] for k in list_presets() if "_" in k})
-        self.query_one("#ps-asset", Select).set_options([(a, a) for a in assets])
+        self.query_one(PS_ASSET_ID, Select).set_options([(a, a) for a in assets])
         self.query_one("#ps-finetune", Checkbox).value = bool(self.cfg.fine_tune)
 
     def _selected_symbol(self, wid: str):
@@ -427,7 +438,7 @@ class DashboardApp(App):
     def preview_preset(self) -> None:
         from .presets import get_preset
 
-        asset = self.query_one("#ps-asset", Select).value
+        asset = self.query_one(PS_ASSET_ID, Select).value
         tf = self.query_one("#ps-tf", Select).value
         t = self.query_one("#ps-preview", DataTable)
         t.clear(columns=True)
@@ -458,7 +469,7 @@ class DashboardApp(App):
 
     def apply_preset(self) -> None:
         s = self._selected_symbol("ps-symbol")
-        asset = self.query_one("#ps-asset", Select).value
+        asset = self.query_one(PS_ASSET_ID, Select).value
         tf = self.query_one("#ps-tf", Select).value
         if not s or asset == Select.BLANK or not asset:
             return
@@ -510,64 +521,59 @@ class DashboardApp(App):
             db.close()
 
     def close_all_positions(self) -> None:
-        from . import exchanges as X
-        from .orders import close_all
-        from .engine import finish_close, get_equity, last_price
-
         ex_cache: dict = {}
-
-        def _ex(name: str, auth: bool):
-            if name not in ex_cache:
-                ex_cache[name] = X.build(name, need_auth=auth)
-            return ex_cache[name]
-
         for s in self.cfg.symbols:
             if not s.enabled:
                 continue
-            if self.cfg.mode == "live":
-                with suppress(Exception):
-                    close_all(_ex(s.exchange, True), s.symbol)
-            from .state import connect, load_open
+            self._close_symbol(s, ex_cache)
 
-            db = connect(self.cfg.state_path)
-            try:
-                oc = load_open(db, s.exchange, s.symbol)
-                if oc:
-                    try:
-                        px = last_price(
-                            _ex(s.exchange, self.cfg.mode == "live"),
-                            s.symbol,
-                            oc["entry"],
-                        )
-                    except Exception:
-                        px = oc["entry"]
-                    try:
-                        eq = get_equity(
-                            _ex(s.exchange, self.cfg.mode == "live"),
-                            s.symbol,
-                            self.cfg.mode,
-                        )
-                    except Exception:
-                        eq = 10000.0
-                    risk = self._risk
-                    if risk is None:
-                        from .risk import RiskState
+    def _close_symbol(self, s, ex_cache: dict) -> None:
+        from .orders import close_all
+        from .engine import finish_close, get_equity, last_price
+        from .state import connect, load_open
 
-                        risk = RiskState()
-                        self._risk = risk
-                    finish_close(
-                        db,
-                        risk,
-                        self.cfg,
-                        s,
-                        oc,
-                        oc.get("realized", 0.0),
-                        px,
-                        "DASHBOARD",
-                        eq,
+        if self.cfg.mode == "live":
+            with suppress(Exception):
+                close_all(_cached_ex(ex_cache, s.exchange, True), s.symbol)
+        db = connect(self.cfg.state_path)
+        try:
+            oc = load_open(db, s.exchange, s.symbol)
+            if oc:
+                try:
+                    px = last_price(
+                        _cached_ex(ex_cache, s.exchange, self.cfg.mode == "live"),
+                        s.symbol,
+                        oc["entry"],
                     )
-            finally:
-                db.close()
+                except Exception:
+                    px = oc["entry"]
+                try:
+                    eq = get_equity(
+                        _cached_ex(ex_cache, s.exchange, self.cfg.mode == "live"),
+                        s.symbol,
+                        self.cfg.mode,
+                    )
+                except Exception:
+                    eq = 10000.0
+                risk = self._risk
+                if risk is None:
+                    from .risk import RiskState
+
+                    risk = RiskState()
+                    self._risk = risk
+                finish_close(
+                    db,
+                    risk,
+                    self.cfg,
+                    s,
+                    oc,
+                    oc.get("realized", 0.0),
+                    px,
+                    "DASHBOARD",
+                    eq,
+                )
+        finally:
+            db.close()
 
     async def _run_backtest(self) -> None:
         out = self.query_one("#bt-result", Static)

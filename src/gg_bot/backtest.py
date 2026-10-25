@@ -6,25 +6,29 @@ import pandas as pd
 from . import strategy as S
 
 
+def _backtest_open(row, preset, slippage_pct):
+    side = 1 if row["turn_long"] else -1
+    entry = row["close"] * (1 + slippage_pct / 100)
+    stop = entry * (1 - side * float(preset.get("stop_pct", 3.0)) / 100)
+    tps = S.tp_distances(
+        entry,
+        stop,
+        row["atr"] if pd.notna(row["atr"]) else 0.0,
+        preset,
+        int(preset.get("tp_count", 4)),
+    )
+    return {
+        "side": side,
+        "entry": entry,
+        "stop": stop,
+        "tp": entry + side * tps[0],
+    }
+
+
 def _backtest_bar(pos, row, preset, slippage_pct, fee_pct):
     # Eine Bar advancing: gibt (pos, pnl|None) zurueck.
     if pos is None and (row["turn_long"] or row["turn_short"]):
-        side = 1 if row["turn_long"] else -1
-        entry = row["close"] * (1 + slippage_pct / 100)
-        stop = entry * (1 - side * float(preset.get("stop_pct", 3.0)) / 100)
-        tps = S.tp_distances(
-            entry,
-            stop,
-            row["atr"] if pd.notna(row["atr"]) else 0.0,
-            preset,
-            int(preset.get("tp_count", 4)),
-        )
-        return {
-            "side": side,
-            "entry": entry,
-            "stop": stop,
-            "tp": entry + side * tps[0],
-        }, None
+        return _backtest_open(row, preset, slippage_pct), None
     if pos is not None:
         hi, lo = row["high"], row["low"]
         hit_tp = (hi >= pos["tp"]) if pos["side"] == 1 else (lo <= pos["tp"])

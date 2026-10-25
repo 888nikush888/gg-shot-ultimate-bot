@@ -38,8 +38,10 @@ def test_build_cycle_splits_by_weight():
         1.0,
     )
     qs = [t["qty"] for t in c["tps"]]
-    assert abs(sum(qs) - 1.0) < 1e-9 and len(qs) == 4
-    assert abs(qs[0] - 0.375) < 1e-9 and abs(qs[1] - 0.3125) < 1e-9
+    assert abs(sum(qs) - 1.0) < 1e-9
+    assert len(qs) == 4
+    assert abs(qs[0] - 0.375) < 1e-9
+    assert abs(qs[1] - 0.3125) < 1e-9
 
 
 def test_adaptive_smooth_differs_from_sharp():
@@ -49,7 +51,7 @@ def test_adaptive_smooth_differs_from_sharp():
     px = pd.Series(np.linspace(100, 130, n) + np.sin(np.arange(n)) * 0.5)
     reg = pd.Series([0.5] * n)
     ad = I.adaptive_series(px, reg, 3)
-    assert ad.iloc[-1] == ad.iloc[-1]  # not NaN at end
+    assert pd.notna(ad.iloc[-1])  # not NaN at end
     assert abs(ad.iloc[-1] - px.iloc[-1]) > 1e-9  # smoothed lags raw
     assert S._refs("Smooth", 1.0, 2.0, 1.1, 2.1, 1.5, 2.5) == (1.5, 2.5)
     assert S._refs("Sharp", 1.0, 2.0, 1.1, 2.1, 1.5, 2.5) == (1.0, 2.0)
@@ -91,7 +93,8 @@ def test_monitor_sl_closes_all():
         {"long": False, "short": False, "osc_short": False, "osc_long": False},
         {},
     )
-    assert ev["closed_all"] and ev["why"] == "SL"
+    assert ev["closed_all"]
+    assert ev["why"] == "SL"
 
 
 def test_monitor_tp_then_be():
@@ -107,8 +110,10 @@ def test_monitor_tp_then_be():
         {"long": False, "short": False, "osc_short": False, "osc_long": False},
         {},
     )
-    assert c["tps"][0]["hit"] and not ev["closed_all"]
-    assert c["stop"] > 100.0 and c["stop_reason"] in ("BE", "TRAIL")
+    assert c["tps"][0]["hit"]
+    assert not ev["closed_all"]
+    assert c["stop"] > 100.0
+    assert c["stop_reason"] in ("BE", "TRAIL")
 
 
 def test_monitor_opposite_close_and_reverse():
@@ -123,7 +128,8 @@ def test_monitor_opposite_close_and_reverse():
         {"long": False, "short": True, "osc_short": False, "osc_long": False},
         {},
     )
-    assert ev["closed_all"] and ev["why"] == "OPP_REVERSE"
+    assert ev["closed_all"]
+    assert ev["why"] == "OPP_REVERSE"
 
 
 def test_monitor_opposite_ignore():

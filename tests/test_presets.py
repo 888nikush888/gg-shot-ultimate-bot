@@ -26,7 +26,8 @@ def test_preset_count_and_schema():
         ]:
             assert f in p, (k, f)
         tps = [p["tp1"], p["tp2"], p["tp3"], p["tp4"]][: int(p["tp_count"])]
-        assert tps == sorted(tps) and len(set(tps)) == len(tps), k
+        assert tps == sorted(tps), k
+        assert len(set(tps)) == len(tps), k
 
 
 def test_finetune_overrides_exist():

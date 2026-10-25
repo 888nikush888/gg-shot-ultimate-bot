@@ -40,7 +40,8 @@ def test_native_skips_exchange_handled_closes():
 def test_closed_frame_drops_forming_candle():
     df = pd.DataFrame({"close": [1.0, 2.0, 3.0]})
     out = closed_frame(df)
-    assert len(out) == 2 and list(out["close"]) == [1.0, 2.0]
+    assert len(out) == 2
+    assert list(out["close"]) == [1.0, 2.0]
     one = pd.DataFrame({"close": [1.0]})
     assert len(closed_frame(one)) == 1
 
@@ -56,7 +57,8 @@ def test_close_all_flag_is_real_option():
 
 def test_env_example_has_binance_keys():
     txt = Path(".env.example").read_text(encoding="utf-8")
-    assert "BINANCE_API_KEY=" in txt and "BINANCE_API_SECRET=" in txt
+    assert "BINANCE_API_KEY=" in txt
+    assert "BINANCE_API_SECRET=" in txt
 
 
 class _LimEx:
@@ -131,10 +133,11 @@ def test_save_open_only_on_change():
 
 
 def test_leverage_range_rejected():
-    import pytest as _pt
+    import pytest
+    from pydantic import ValidationError
     from gg_bot.config import SymbolCfg
 
-    with _pt.raises(Exception):
+    with pytest.raises(ValidationError):
         SymbolCfg(
             exchange="hyperliquid",
             symbol="BTC/USDC:USDC",
@@ -142,7 +145,7 @@ def test_leverage_range_rejected():
             timeframe="1h",
             leverage=126,
         )
-    with _pt.raises(Exception):
+    with pytest.raises(ValidationError):
         SymbolCfg(
             exchange="hyperliquid",
             symbol="BTC/USDC:USDC",
