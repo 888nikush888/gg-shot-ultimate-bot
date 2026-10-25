@@ -5,7 +5,7 @@ pydantic-settings==2.7.0
 typer==0.27.3
 structlog==24.4.0
 httpx==0.28.1
-numpy==2.2.2
+numpy==2.5.4
 pandas==2.2.3
 pytest==9.0.3
 textual==8.2.8
