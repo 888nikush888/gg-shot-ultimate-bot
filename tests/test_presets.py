@@ -33,3 +33,44 @@ def test_preset_count_and_schema():
 def test_finetune_overrides_exist():
     db = load()
     assert db["_finetune_overrides"]["BTC_1h"]["volume_min"] == 1.10
+
+
+def test_finetune_golden_combo_group_a():
+    db = load()
+    ov = db["_finetune_overrides"]
+    keys = [
+        "BTC_1h",
+        "NEAR_1h",
+        "PEPE_1h",
+        "SHIB_1h",
+        "DOT_1h",
+        "LINK_1h",
+        "ETC_1h",
+        "LTC_1h",
+    ]
+    for k in keys:
+        assert k in ov, "Override fehlt: " + k
+        assert ov[k]["stop_pct"] == 4.5
+        assert ov[k]["trail_pct"] == 1.4
+        assert ov[k]["volume_on"] is True
+        assert ov[k]["volume_min"] == 1.1
+        assert ov[k]["be_buffer"] == 0.2
+
+
+def test_get_preset_resolution_and_isolation():
+    from gg_bot.presets import get_preset
+
+    base_btc = get_preset("BTC", "1h", fine_tune=False)
+    assert base_btc["stop_pct"] == 4.0
+    assert base_btc["volume_on"] is False
+    gold_btc = get_preset("BTC", "1h", fine_tune=True)
+    assert gold_btc["stop_pct"] == 4.5
+    assert gold_btc["trail_pct"] == 1.4
+    assert gold_btc["volume_on"] is True
+    gold_near = get_preset("NEAR", "1h", fine_tune=True)
+    assert gold_near["stop_pct"] == 4.5
+    assert gold_near["trail_pct"] == 1.4
+    sui_ft = get_preset("SUI", "1h", fine_tune=True)
+    sui_base = get_preset("SUI", "1h", fine_tune=False)
+    assert sui_ft["stop_pct"] == sui_base["stop_pct"]
+    assert sui_ft["trail_pct"] == sui_base["trail_pct"]

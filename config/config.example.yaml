@@ -1,6 +1,6 @@
 mode: paper
 poll_seconds: 20
-fine_tune: false
+fine_tune: true
 state_path: /app/data/state.db
 risk:
   max_daily_loss_pct: 5.0
