@@ -1,4 +1,5 @@
 import inspect
+import numpy as np
 import pandas as pd
 from gg_bot.orders import stop_market_type
 from gg_bot.engine import (
@@ -66,7 +67,7 @@ class _LimEx:
         if self._fail:
             raise RuntimeError("offline")
 
-    def market(self, symbol):
+    def market(self, _symbol):
         return {
             "limits": {
                 "amount": {"min": self._limits[0]},
@@ -102,7 +103,8 @@ def test_cached_equity_calls_once_per_ttl():
     calls = []
 
     class FakeEx:
-        def fetch_balance(self):
+        @staticmethod
+        def fetch_balance():
             calls.append(1)
             return {"total": {"USDT": 500.0}}
 
@@ -157,8 +159,6 @@ def test_leverage_range_rejected():
 
 
 def test_backtest_tolerates_none_manual():
-    import numpy as np
-    import pandas as pd
     from gg_bot.backtest import run
 
     n = 60
@@ -180,10 +180,12 @@ def test_swap_only_skips_broken_spot():
     from gg_bot.exchanges import _swap_only
 
     class FakeEx:
-        def fetch_swap_markets(self, params={}):
+        @staticmethod
+        def fetch_swap_markets(_params=None):
             return [{"symbol": "BTC/USDC:USDC"}]
 
-        def fetch_spot_markets(self, params={}):
+        @staticmethod
+        def fetch_spot_markets(_params=None):
             raise TypeError("unsupported operand type(s) for +: NoneType and str")
 
     ex = FakeEx()

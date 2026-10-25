@@ -143,7 +143,8 @@ def test_monitor_opposite_ignore():
 
 def test_get_equity_raises_without_balance():
     class FakeEx:
-        def fetch_balance(self):
+        @staticmethod
+        def fetch_balance():
             return {"total": {}}
 
     try:
@@ -155,7 +156,8 @@ def test_get_equity_raises_without_balance():
 
 def test_get_equity_uses_settle():
     class FakeEx:
-        def fetch_balance(self):
+        @staticmethod
+        def fetch_balance():
             return {"total": {"USDT": 0, "USDC": 500.0}}
 
     assert get_equity(FakeEx(), "BTC/USDC:USDC", "live") == 500.0
@@ -165,7 +167,8 @@ def test_set_leverage_passthrough():
     calls = []
 
     class FakeEx:
-        def set_leverage(self, lev, sym, params=None):
+        @staticmethod
+        def set_leverage(lev, sym, _params=None):
             calls.append((lev, sym))
 
     assert X.set_leverage(FakeEx(), "BTC/USDC:USDC", 10) is True
@@ -174,7 +177,8 @@ def test_set_leverage_passthrough():
 
 def test_fetch_position_qty_signed():
     class FakeEx:
-        def fetch_positions(self, syms):
+        @staticmethod
+        def fetch_positions(_syms):
             return [
                 {"symbol": "BTC/USDC:USDC", "contracts": 2.0, "side": "long"},
                 {"symbol": "BTC/USDC:USDC", "contracts": 1.0, "side": "short"},
@@ -187,10 +191,12 @@ def test_close_all_sides():
     made = []
 
     class FakeEx:
-        def fetch_positions(self, syms):
+        @staticmethod
+        def fetch_positions(_syms):
             return [{"symbol": "X", "contracts": 3.0, "side": "short"}]
 
-        def create_order(self, sym, typ, side, amt, px, params):
+        @staticmethod
+        def create_order(_sym, _typ, side, _amt, _px, _params):
             made.append(side)
             return {}
 

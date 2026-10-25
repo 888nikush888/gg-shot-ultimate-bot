@@ -39,7 +39,7 @@ def test_save_config_backup_and_validate():
         shutil.rmtree(d.name, ignore_errors=True)
 
 
-def _run(coro_factory=None):
+def _run():
     async def main():
         d, p = _test_config()
         try:

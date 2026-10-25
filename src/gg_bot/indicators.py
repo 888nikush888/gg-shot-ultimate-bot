@@ -1,6 +1,7 @@
 """Pine-compatible indicators (pure numpy/pandas, no external TA lib)."""
 
 from __future__ import annotations
+import math
 import numpy as np
 import pandas as pd
 
@@ -81,8 +82,11 @@ def pivothigh(h: pd.Series, k: int) -> pd.Series:
 
 
 def _is_na(x: float) -> bool:
-    """Pine na(): True nur fuer NaN (x != x gilt nur fuer NaN)."""
-    return x != x  # noqa: PLR0124
+    """Pine na(): True nur fuer NaN (kein Selbstvergleich)."""
+    try:
+        return math.isnan(x)
+    except (TypeError, ValueError):
+        return False
 
 
 def adaptive_series(s: pd.Series, regime: pd.Series, smooth: int) -> pd.Series:

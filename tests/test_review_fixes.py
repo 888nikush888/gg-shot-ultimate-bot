@@ -1,4 +1,6 @@
 import datetime as _dt
+import os
+import tempfile
 import pytest
 from gg_bot.engine import (
     entry_prices,
@@ -9,8 +11,6 @@ from gg_bot.engine import (
 )
 from gg_bot.state import connect
 from gg_bot.config import load_config
-import os
-import tempfile
 
 
 def _cyc(**kw):
@@ -81,7 +81,7 @@ def test_validate_manual():
             validate_manual(bad)
 
 
-def test_password_pbkdf2_and_legacy(monkeypatch=None):
+def test_password_pbkdf2_and_legacy():
     import gg_bot.tui as tui
 
     h = tui.hash_password("geheim123")
@@ -148,7 +148,7 @@ def test_session_zone_day_boundary():
     )
 
 
-def test_audit_retention(tmp_path_factory=None):
+def test_audit_retention():
 
     d = tempfile.mkdtemp()
     p = os.path.join(d, "t.db")

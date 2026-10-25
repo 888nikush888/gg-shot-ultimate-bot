@@ -105,10 +105,12 @@ class BotEdgeCaseStressTest(unittest.TestCase):
 
     def test_min_notional_binance_edge_case(self):
         class MockBinance:
-            def load_markets(self):
-                pass
+            @staticmethod
+            def load_markets():
+                return {"BTC/USDT:USDT": {}, "DOGE/USDT:USDT": {}}
 
-            def market(self, sym):
+            @staticmethod
+            def market(_sym):
                 return {"limits": {"amount": {"min": 0.001}, "cost": {"min": 5.0}}}
 
         ex = MockBinance()

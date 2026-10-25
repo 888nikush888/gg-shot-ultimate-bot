@@ -8,9 +8,6 @@ import time
 from contextlib import suppress
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .risk import RiskState
-
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
@@ -27,6 +24,9 @@ from textual.widgets import (
     TabbedContent,
     TabPane,
 )
+
+if TYPE_CHECKING:
+    from .risk import RiskState
 
 SALT = "gg-shot-ultimate-v6"
 
@@ -89,6 +89,8 @@ class DashboardApp(App):
         super().__init__()
         self._config_path = config_path
         self._risk: RiskState | None = None
+        self._ex_cache: dict = {}
+        self._qty_cache: dict = {}
         self.reload_config()
 
     def reload_config(self) -> None:
@@ -99,7 +101,8 @@ class DashboardApp(App):
         if self._risk is None:
             self._risk = RiskState()
 
-    def compose(self) -> ComposeResult:
+    @staticmethod
+    def compose() -> ComposeResult:
         yield Header()
         with TabbedContent(id="tabs"):
             with TabPane("Overview", id="tab-overview"):
@@ -244,9 +247,6 @@ class DashboardApp(App):
     def _live_qty(self, exchange: str, symbol: str) -> str:
         from . import exchanges as X
 
-        if not hasattr(self, "_ex_cache"):
-            self._ex_cache = {}
-            self._qty_cache = {}
         now = time.time()
         hit = self._qty_cache.get(exchange + ":" + symbol)
         if hit and now - hit[0] < 30.0:
@@ -332,56 +332,80 @@ class DashboardApp(App):
         with suppress(Exception):
             self.notify(note)
 
+    async def _flow_close_all(self) -> None:
+        if await self._confirm("Close ALL positions (reduceOnly)?"):
+            self.close_all_positions()
+            self.refresh_all()
+
+    async def _flow_apply_preset(self) -> None:
+        if await self._confirm("Apply preset change to config?"):
+            self.apply_preset()
+            self.refresh_all()
+
+    async def _flow_mode(self) -> None:
+        target = "live" if self.cfg.mode == "paper" else "paper"
+        msg = (
+            "Switch to LIVE trading with real money?"
+            if target == "live"
+            else f"Switch mode to {target}?"
+        )
+        if await self._confirm(msg):
+            self.cfg.mode = target  # type: ignore[assignment]
+            self._save()
+            self._fill_selects()
+            self.refresh_all()
+
+    def _flow_enable(self, bid: str) -> None:
+        s = self._selected_symbol("ctl-symbol")
+        if s:
+            s.enabled = bid == "ctl-enable"
+            self._save()
+            self.refresh_all()
+
+    async def _flow_kill(self) -> None:
+        if await self._confirm("Engage KILL switch? Blocks entries, closes live all."):
+            self.kill_engage("dashboard")
+            self.refresh_all()
+
+    def _flow_unblock(self) -> None:
+        self.kill_reset()
+        self.refresh_all()
+
+    def _flow_tg(self) -> None:
+        from . import telegram as TG
+
+        ok = TG.send("GG-Bot Telegram-Test OK (dashboard)")
+        self.query_one("#ctl-msg", Static).update(
+            "sent" if ok else "not-configured-or-failed"
+        )
+
+    def _flow_backtest(self) -> None:
+        self.run_worker(self._run_backtest(), exclusive=True)
+
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         bid = event.button.id
         if bid == "pos-refresh":
             self.refresh_positions()
         elif bid == "pos-closeall":
-            if await self._confirm("Close ALL positions (reduceOnly)?"):
-                self.close_all_positions()
-                self.refresh_all()
+            await self._flow_close_all()
         elif bid == "ps-list":
             self.list_presets()
         elif bid == "ps-preview":
             self.preview_preset()
         elif bid == "ps-apply":
-            if await self._confirm("Apply preset change to config?"):
-                self.apply_preset()
-                self.refresh_all()
+            await self._flow_apply_preset()
         elif bid == "ctl-mode":
-            target = "live" if self.cfg.mode == "paper" else "paper"
-            msg = f"Switch mode to {target}?"
-            if target == "live":
-                msg = "Switch to LIVE trading with real money?"
-            if await self._confirm(msg):
-                self.cfg.mode = target  # type: ignore[assignment]
-                self._save()
-                self._fill_selects()
-                self.refresh_all()
+            await self._flow_mode()
         elif bid in ("ctl-enable", "ctl-disable"):
-            s = self._selected_symbol("ctl-symbol")
-            if s:
-                s.enabled = bid == "ctl-enable"
-                self._save()
-                self.refresh_all()
+            self._flow_enable(bid)
         elif bid == "ctl-kill":
-            if await self._confirm(
-                "Engage KILL switch? Blocks entries, closes live all."
-            ):
-                self.kill_engage("dashboard")
-                self.refresh_all()
+            await self._flow_kill()
         elif bid == "ctl-unblock":
-            self.kill_reset()
-            self.refresh_all()
+            self._flow_unblock()
         elif bid == "ctl-tg":
-            from . import telegram as TG
-
-            ok = TG.send("GG-Bot Telegram-Test OK (dashboard)")
-            self.query_one("#ctl-msg", Static).update(
-                "sent" if ok else "not-configured-or-failed"
-            )
+            self._flow_tg()
         elif bid == "bt-run":
-            self.run_worker(self._run_backtest(), exclusive=True)
+            self._flow_backtest()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "ps-filter":
