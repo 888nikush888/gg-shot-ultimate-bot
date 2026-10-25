@@ -5,6 +5,10 @@ import asyncio
 import hashlib
 import os
 from contextlib import suppress
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .risk import RiskState
 
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -83,7 +87,7 @@ class DashboardApp(App):
     def __init__(self, config_path: str) -> None:
         super().__init__()
         self._config_path = config_path
-        self._risk = None
+        self._risk: RiskState | None = None
         self.reload_config()
 
     def reload_config(self) -> None:
@@ -522,9 +526,15 @@ class DashboardApp(App):
                         )
                     except Exception:
                         eq = 10000.0
+                    risk = self._risk
+                    if risk is None:
+                        from .risk import RiskState
+
+                        risk = RiskState()
+                        self._risk = risk
                     finish_close(
                         db,
-                        self._risk,
+                        risk,
                         self.cfg,
                         s,
                         oc,

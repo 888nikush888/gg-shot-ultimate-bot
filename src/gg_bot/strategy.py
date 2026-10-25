@@ -295,23 +295,21 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
             tl = (not touched) and (lo <= lower) and (c > lower)
             ts = (not touched) and (h >= upper) and (c < upper)
         touch_l = (d == 1) and (
-            (bounce_on and lo <= line and c > line)
+            (bounce_on and lo <= line < c)
             or (
                 sr_on
                 and not _is_na(sup[i])
                 and not _is_na(atr_v)
-                and lo <= sup[i] + atr_v * zone
-                and c > sup[i] + atr_v * zone
+                and lo <= sup[i] + atr_v * zone < c
             )
         )
         touch_s = (d == -1) and (
-            (bounce_on and h >= line and c < line)
+            (bounce_on and c < line <= h)
             or (
                 sr_on
                 and not _is_na(res[i])
                 and not _is_na(atr_v)
-                and h >= res[i] - atr_v * zone
-                and c < res[i] - atr_v * zone
+                and c < res[i] - atr_v * zone <= h
             )
         )
         bounce_l.append(adv and touch_l and not prev_touch_l)

@@ -1,0 +1,611 @@
+﻿2026-10-25T01:43:23.5296623Z Current runner version: '2.338.0'
+2026-10-25T01:43:23.5316859Z ##[group]Runner Image Provisioner
+2026-10-25T01:43:23.5317556Z Hosted Compute Agent
+2026-10-25T01:43:23.5318049Z Version: 20261021.618
+2026-10-25T01:43:23.5318618Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-25T01:43:23.5319207Z Build Date: 2026-10-21T00:45:21Z
+2026-10-25T01:43:23.5319766Z Worker ID: {1af87591-fe2f-40f6-a422-045285fae245}
+2026-10-25T01:43:23.5320382Z Region: westus3
+2026-10-25T01:43:23.5320866Z Cloud: Azure
+2026-10-25T01:43:23.5321356Z ##[endgroup]
+2026-10-25T01:43:23.5322418Z ##[group]Operating System
+2026-10-25T01:43:23.5322902Z Ubuntu
+2026-10-25T01:43:23.5323605Z 24.04.5
+2026-10-25T01:43:23.5324040Z LTS
+2026-10-25T01:43:23.5324491Z ##[endgroup]
+2026-10-25T01:43:23.5324962Z ##[group]Runner Image
+2026-10-25T01:43:23.5325485Z Image: ubuntu-24.04
+2026-10-25T01:43:23.5326027Z Version: 20261012.334.1
+2026-10-25T01:43:23.5327042Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-25T01:43:23.5328335Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-25T01:43:23.5329103Z ##[endgroup]
+2026-10-25T01:43:23.5330028Z ##[group]GITHUB_TOKEN Permissions
+2026-10-25T01:43:23.5331547Z Contents: read
+2026-10-25T01:43:23.5332141Z Metadata: read
+2026-10-25T01:43:23.5332642Z ##[endgroup]
+2026-10-25T01:43:23.5334486Z Secret source: Actions
+2026-10-25T01:43:23.5335246Z Cache mode: write
+2026-10-25T01:43:23.5335876Z Prepare workflow directory
+2026-10-25T01:43:23.5642456Z Prepare all required actions
+2026-10-25T01:43:23.5682194Z Getting action download info
+2026-10-25T01:43:23.8417517Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-25T01:43:23.9903674Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-10-25T01:43:24.2980134Z Complete job name: test (3.13)
+2026-10-25T01:43:24.3647951Z ##[group]Run actions/checkout@v4
+2026-10-25T01:43:24.3648605Z with:
+2026-10-25T01:43:24.3648989Z   repository: 888nikush888/gg-shot-ultimate-bot
+2026-10-25T01:43:24.3652307Z   token: ***
+2026-10-25T01:43:24.3652651Z   ssh-strict: true
+2026-10-25T01:43:24.3653173Z   ssh-user: git
+2026-10-25T01:43:24.3653531Z   persist-credentials: true
+2026-10-25T01:43:24.3653910Z   clean: true
+2026-10-25T01:43:24.3654264Z   sparse-checkout-cone-mode: true
+2026-10-25T01:43:24.3654673Z   fetch-depth: 1
+2026-10-25T01:43:24.3655008Z   fetch-tags: false
+2026-10-25T01:43:24.3655353Z   show-progress: true
+2026-10-25T01:43:24.3655700Z   lfs: false
+2026-10-25T01:43:24.3656021Z   submodules: false
+2026-10-25T01:43:24.3656376Z   set-safe-directory: true
+2026-10-25T01:43:24.3656766Z   allow-unsafe-pr-checkout: false
+2026-10-25T01:43:24.3657317Z env:
+2026-10-25T01:43:24.3657629Z   PYTHONPATH: src
+2026-10-25T01:43:24.3657969Z ##[endgroup]
+2026-10-25T01:43:24.4461889Z Syncing repository: 888nikush888/gg-shot-ultimate-bot
+2026-10-25T01:43:24.4463562Z ##[group]Getting Git version info
+2026-10-25T01:43:24.4464354Z Working directory is '/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot'
+2026-10-25T01:43:24.4465249Z [command]/usr/bin/git version
+2026-10-25T01:43:24.4526171Z git version 2.55.0
+2026-10-25T01:43:24.4552797Z ##[endgroup]
+2026-10-25T01:43:24.4558256Z Temporarily overriding HOME='/home/runner/work/_temp/e7969fb9-94e0-433e-a549-161ae9e151d0' before making global git config changes
+2026-10-25T01:43:24.4563929Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-25T01:43:24.4565355Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot
+2026-10-25T01:43:24.4605086Z Deleting the contents of '/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot'
+2026-10-25T01:43:24.4608020Z ##[group]Initializing the repository
+2026-10-25T01:43:24.4610823Z [command]/usr/bin/git init /home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot
+2026-10-25T01:43:24.4674726Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-25T01:43:24.4676232Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-25T01:43:24.4678419Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-25T01:43:24.4679556Z hint: call:
+2026-10-25T01:43:24.4680036Z hint:
+2026-10-25T01:43:24.4680657Z hint: 	git config --global init.defaultBranch <name>
+2026-10-25T01:43:24.4681406Z hint:
+2026-10-25T01:43:24.4682104Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-25T01:43:24.4683365Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-25T01:43:24.4684327Z hint:
+2026-10-25T01:43:24.4684820Z hint: 	git branch -m <name>
+2026-10-25T01:43:24.4685769Z hint:
+2026-10-25T01:43:24.4686696Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-25T01:43:24.4688474Z Initialized empty Git repository in /home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot/.git/
+2026-10-25T01:43:24.4690787Z [command]/usr/bin/git remote add origin https://github.com/888nikush888/gg-shot-ultimate-bot
+2026-10-25T01:43:24.4723644Z ##[endgroup]
+2026-10-25T01:43:24.4724282Z ##[group]Disabling automatic garbage collection
+2026-10-25T01:43:24.4728200Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-25T01:43:24.4753774Z ##[endgroup]
+2026-10-25T01:43:24.4754442Z ##[group]Setting up auth
+2026-10-25T01:43:24.4760444Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-25T01:43:24.4788301Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-25T01:43:24.5112201Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-25T01:43:24.5142894Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-25T01:43:24.5327391Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-25T01:43:24.5356494Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-25T01:43:24.5538670Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-25T01:43:24.5573163Z ##[endgroup]
+2026-10-25T01:43:24.5579989Z ##[group]Fetching the repository
+2026-10-25T01:43:24.5581225Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +632f14046a6e3b499e6a6251058c61f88d7c8d46:refs/remotes/pull/14/merge
+2026-10-25T01:43:25.1376463Z From https://github.com/888nikush888/gg-shot-ultimate-bot
+2026-10-25T01:43:25.1377688Z  * [new ref]         632f14046a6e3b499e6a6251058c61f88d7c8d46 -> pull/14/merge
+2026-10-25T01:43:25.1379967Z ##[endgroup]
+2026-10-25T01:43:25.1380883Z ##[group]Determining the checkout info
+2026-10-25T01:43:25.1381939Z ##[endgroup]
+2026-10-25T01:43:25.1386985Z [command]/usr/bin/git sparse-checkout disable
+2026-10-25T01:43:25.1434389Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-25T01:43:25.1462353Z ##[group]Checking out the ref
+2026-10-25T01:43:25.1464659Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/14/merge
+2026-10-25T01:43:25.1531093Z Note: switching to 'refs/remotes/pull/14/merge'.
+2026-10-25T01:43:25.1531837Z 
+2026-10-25T01:43:25.1532284Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-25T01:43:25.1533182Z changes and commit them, and you can discard any commits you make in this
+2026-10-25T01:43:25.1533922Z state without impacting any branches by switching back to a branch.
+2026-10-25T01:43:25.1534365Z 
+2026-10-25T01:43:25.1534707Z If you want to create a new branch to retain commits you create, you may
+2026-10-25T01:43:25.1535569Z do so (now or later) by using -c with the switch command. Example:
+2026-10-25T01:43:25.1535946Z 
+2026-10-25T01:43:25.1536132Z   git switch -c <new-branch-name>
+2026-10-25T01:43:25.1536393Z 
+2026-10-25T01:43:25.1536569Z Or undo this operation with:
+2026-10-25T01:43:25.1536841Z 
+2026-10-25T01:43:25.1536993Z   git switch -
+2026-10-25T01:43:25.1537246Z 
+2026-10-25T01:43:25.1537566Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-25T01:43:25.1538025Z 
+2026-10-25T01:43:25.1538527Z HEAD is now at 632f140 Merge cddf72ac74d9aa55a658037df77ad975aaa8fce4 into ec028ed801e3cfa02f9bc42bd6b99b0a2c3e3106
+2026-10-25T01:43:25.1547090Z ##[endgroup]
+2026-10-25T01:43:25.1580171Z [command]/usr/bin/git log -1 --format=%H
+2026-10-25T01:43:25.1602472Z 632f14046a6e3b499e6a6251058c61f88d7c8d46
+2026-10-25T01:43:25.1894809Z ##[group]Run actions/setup-python@v5
+2026-10-25T01:43:25.1895280Z with:
+2026-10-25T01:43:25.1895626Z   python-version: 3.13
+2026-10-25T01:43:25.1896000Z   cache: pip
+2026-10-25T01:43:25.1896336Z   check-latest: false
+2026-10-25T01:43:25.1899561Z   token: ***
+2026-10-25T01:43:25.1899904Z   update-environment: true
+2026-10-25T01:43:25.1900317Z   allow-prereleases: false
+2026-10-25T01:43:25.1900698Z   freethreaded: false
+2026-10-25T01:43:25.1901049Z env:
+2026-10-25T01:43:25.1901366Z   PYTHONPATH: src
+2026-10-25T01:43:25.1901707Z ##[endgroup]
+2026-10-25T01:43:25.2911042Z ##[group]Installed versions
+2026-10-25T01:43:25.3244327Z (node:2052) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-25T01:43:25.3245525Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-25T01:43:25.3259246Z Successfully set up CPython (3.13.16)
+2026-10-25T01:43:25.3260575Z ##[endgroup]
+2026-10-25T01:43:25.3762153Z [command]/opt/hostedtoolcache/Python/3.13.16/x64/bin/pip cache dir
+2026-10-25T01:43:27.2966388Z /home/runner/.cache/pip
+2026-10-25T01:43:27.5134638Z pip cache is not found
+2026-10-25T01:43:27.5268184Z ##[group]Run pip install -r requirements.txt && pip install pytest-cov
+2026-10-25T01:43:27.5268714Z [36;1mpip install -r requirements.txt && pip install pytest-cov[0m
+2026-10-25T01:43:27.5476865Z shell: /usr/bin/bash -e {0}
+2026-10-25T01:43:27.5477131Z env:
+2026-10-25T01:43:27.5477342Z   PYTHONPATH: src
+2026-10-25T01:43:27.5477618Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:27.5478018Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+2026-10-25T01:43:27.5478405Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:27.5478746Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:27.5479105Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:27.5479454Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+2026-10-25T01:43:27.5479757Z ##[endgroup]
+2026-10-25T01:43:29.3772633Z Collecting ccxt==4.4.87 (from -r requirements.txt (line 1))
+2026-10-25T01:43:29.4267320Z   Downloading ccxt-4.4.87-py2.py3-none-any.whl.metadata (130 kB)
+2026-10-25T01:43:29.4957084Z Collecting pyyaml==6.0.2 (from -r requirements.txt (line 2))
+2026-10-25T01:43:29.4989194Z   Downloading PyYAML-6.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+2026-10-25T01:43:29.5691062Z Collecting pydantic==2.10.6 (from -r requirements.txt (line 3))
+2026-10-25T01:43:29.5724108Z   Downloading pydantic-2.10.6-py3-none-any.whl.metadata (30 kB)
+2026-10-25T01:43:29.5999101Z Collecting pydantic-settings==2.7.0 (from -r requirements.txt (line 4))
+2026-10-25T01:43:29.6043816Z   Downloading pydantic_settings-2.7.0-py3-none-any.whl.metadata (3.5 kB)
+2026-10-25T01:43:29.6170579Z Collecting typer==0.15.2 (from -r requirements.txt (line 5))
+2026-10-25T01:43:29.6209685Z   Downloading typer-0.15.2-py3-none-any.whl.metadata (15 kB)
+2026-10-25T01:43:29.6319612Z Collecting structlog==24.4.0 (from -r requirements.txt (line 6))
+2026-10-25T01:43:29.6348395Z   Downloading structlog-24.4.0-py3-none-any.whl.metadata (7.3 kB)
+2026-10-25T01:43:29.6484015Z Collecting httpx==0.28.1 (from -r requirements.txt (line 7))
+2026-10-25T01:43:29.6514626Z   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2026-10-25T01:43:29.7879638Z Collecting numpy==2.2.2 (from -r requirements.txt (line 8))
+2026-10-25T01:43:29.7925612Z   Downloading numpy-2.2.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+2026-10-25T01:43:29.8860472Z Collecting pandas==2.2.3 (from -r requirements.txt (line 9))
+2026-10-25T01:43:29.8911114Z   Downloading pandas-2.2.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (89 kB)
+2026-10-25T01:43:29.9271543Z Collecting pytest==9.0.3 (from -r requirements.txt (line 10))
+2026-10-25T01:43:29.9304368Z   Downloading pytest-9.0.3-py3-none-any.whl.metadata (7.6 kB)
+2026-10-25T01:43:29.9524997Z Collecting textual==8.2.8 (from -r requirements.txt (line 11))
+2026-10-25T01:43:29.9559570Z   Downloading textual-8.2.8-py3-none-any.whl.metadata (9.1 kB)
+2026-10-25T01:43:30.0107501Z Collecting setuptools>=60.9.0 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.0146206Z   Downloading setuptools-84.2.1-py3-none-any.whl.metadata (6.6 kB)
+2026-10-25T01:43:30.0591199Z Collecting certifi>=2018.1.18 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.0620810Z   Downloading certifi-2026.10.23-py3-none-any.whl.metadata (2.5 kB)
+2026-10-25T01:43:30.0911623Z Collecting requests>=2.18.4 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.0948709Z   Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+2026-10-25T01:43:30.2206452Z Collecting cryptography>=2.6.1 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.2239744Z   Downloading cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (4.4 kB)
+2026-10-25T01:43:30.2357499Z Collecting typing-extensions>=4.4.0 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.2388755Z   Downloading typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+2026-10-25T01:43:30.6177277Z Collecting aiohttp>=3.10.11 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.6211641Z   Downloading aiohttp-3.14.5-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.3 kB)
+2026-10-25T01:43:30.6373155Z Collecting aiodns>=1.1.1 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.6404421Z   Downloading aiodns-4.0.4-py3-none-any.whl.metadata (9.0 kB)
+2026-10-25T01:43:30.8136240Z Collecting yarl>=1.7.2 (from ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:30.8169872Z   Downloading yarl-1.25.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (111 kB)
+2026-10-25T01:43:30.8316388Z Collecting annotated-types>=0.6.0 (from pydantic==2.10.6->-r requirements.txt (line 3))
+2026-10-25T01:43:30.8345890Z   Downloading annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+2026-10-25T01:43:31.2912767Z Collecting pydantic-core==2.27.2 (from pydantic==2.10.6->-r requirements.txt (line 3))
+2026-10-25T01:43:31.2955951Z   Downloading pydantic_core-2.27.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+2026-10-25T01:43:31.3089746Z Collecting python-dotenv>=0.21.0 (from pydantic-settings==2.7.0->-r requirements.txt (line 4))
+2026-10-25T01:43:31.3121842Z   Downloading python_dotenv-1.2.4-py3-none-any.whl.metadata (29 kB)
+2026-10-25T01:43:31.3262048Z Collecting click>=8.0.0 (from typer==0.15.2->-r requirements.txt (line 5))
+2026-10-25T01:43:31.3309181Z   Downloading click-8.5.0-py3-none-any.whl.metadata (2.6 kB)
+2026-10-25T01:43:31.3407430Z Collecting shellingham>=1.3.0 (from typer==0.15.2->-r requirements.txt (line 5))
+2026-10-25T01:43:31.3445494Z   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+2026-10-25T01:43:31.3646135Z Collecting rich>=10.11.0 (from typer==0.15.2->-r requirements.txt (line 5))
+2026-10-25T01:43:31.3675697Z   Downloading rich-15.0.0-py3-none-any.whl.metadata (18 kB)
+2026-10-25T01:43:31.3821354Z Collecting anyio (from httpx==0.28.1->-r requirements.txt (line 7))
+2026-10-25T01:43:31.3852938Z   Downloading anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+2026-10-25T01:43:31.3968428Z Collecting httpcore==1.* (from httpx==0.28.1->-r requirements.txt (line 7))
+2026-10-25T01:43:31.4004696Z   Downloading httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+2026-10-25T01:43:31.4304966Z Collecting idna (from httpx==0.28.1->-r requirements.txt (line 7))
+2026-10-25T01:43:31.4339517Z   Downloading idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+2026-10-25T01:43:31.4448222Z Collecting python-dateutil>=2.8.2 (from pandas==2.2.3->-r requirements.txt (line 9))
+2026-10-25T01:43:31.4477876Z   Downloading python_dateutil-3.0.0-py2.py3-none-any.whl.metadata (8.2 kB)
+2026-10-25T01:43:31.4754773Z Collecting pytz>=2020.1 (from pandas==2.2.3->-r requirements.txt (line 9))
+2026-10-25T01:43:31.4787842Z   Downloading pytz-2026.5-py2.py3-none-any.whl.metadata (22 kB)
+2026-10-25T01:43:31.4898849Z Collecting tzdata>=2022.7 (from pandas==2.2.3->-r requirements.txt (line 9))
+2026-10-25T01:43:31.4932091Z   Downloading tzdata-2026.5-py2.py3-none-any.whl.metadata (1.4 kB)
+2026-10-25T01:43:31.5021081Z Collecting iniconfig>=1.0.1 (from pytest==9.0.3->-r requirements.txt (line 10))
+2026-10-25T01:43:31.5052555Z   Downloading iniconfig-2.3.1-py3-none-any.whl.metadata (2.8 kB)
+2026-10-25T01:43:31.5181608Z Collecting packaging>=22 (from pytest==9.0.3->-r requirements.txt (line 10))
+2026-10-25T01:43:31.5211690Z   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-10-25T01:43:31.5300934Z Collecting pluggy<2,>=1.5 (from pytest==9.0.3->-r requirements.txt (line 10))
+2026-10-25T01:43:31.5335502Z   Downloading pluggy-1.7.0-py3-none-any.whl.metadata (5.0 kB)
+2026-10-25T01:43:31.5462848Z Collecting pygments>=2.7.2 (from pytest==9.0.3->-r requirements.txt (line 10))
+2026-10-25T01:43:31.5496704Z   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-10-25T01:43:31.5907342Z Collecting markdown-it-py>=2.1.0 (from markdown-it-py[linkify]>=2.1.0->textual==8.2.8->-r requirements.txt (line 11))
+2026-10-25T01:43:31.5939956Z   Downloading markdown_it_py-4.2.0-py3-none-any.whl.metadata (7.4 kB)
+2026-10-25T01:43:31.6058075Z Collecting mdit-py-plugins (from textual==8.2.8->-r requirements.txt (line 11))
+2026-10-25T01:43:31.6097429Z   Downloading mdit_py_plugins-0.6.1-py3-none-any.whl.metadata (2.9 kB)
+2026-10-25T01:43:31.6247763Z Collecting platformdirs<5,>=3.6.0 (from textual==8.2.8->-r requirements.txt (line 11))
+2026-10-25T01:43:31.6278849Z   Downloading platformdirs-4.13.5-py3-none-any.whl.metadata (5.5 kB)
+2026-10-25T01:43:31.6507068Z Collecting h11>=0.16 (from httpcore==1.*->httpx==0.28.1->-r requirements.txt (line 7))
+2026-10-25T01:43:31.6548503Z   Downloading h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+2026-10-25T01:43:31.7118777Z Collecting pycares<6,>=5.0.0 (from aiodns>=1.1.1->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:31.7157586Z   Downloading pycares-5.2.1-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl.metadata (4.1 kB)
+2026-10-25T01:43:31.7863684Z Collecting cffi>=1.5.0 (from pycares<6,>=5.0.0->aiodns>=1.1.1->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:31.7898408Z   Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+2026-10-25T01:43:31.8005151Z Collecting aiohappyeyeballs>=2.5.0 (from aiohttp>=3.10.11->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:31.8037567Z   Downloading aiohappyeyeballs-2.7.1-py3-none-any.whl.metadata (5.9 kB)
+2026-10-25T01:43:31.8120036Z Collecting aiosignal>=1.4.0 (from aiohttp>=3.10.11->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:31.8152116Z   Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+2026-10-25T01:43:31.8262685Z Collecting attrs>=17.3.0 (from aiohttp>=3.10.11->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:31.8311590Z   Downloading attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+2026-10-25T01:43:31.8735021Z Collecting frozenlist>=1.1.1 (from aiohttp>=3.10.11->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:31.8767810Z   Downloading frozenlist-1.8.0-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+2026-10-25T01:43:32.0627324Z Collecting multidict<8.0,>=4.5 (from aiohttp>=3.10.11->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:32.0664881Z   Downloading multidict-7.2.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (6.1 kB)
+2026-10-25T01:43:32.1360989Z Collecting propcache>=0.2.0 (from aiohttp>=3.10.11->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:32.1396801Z   Downloading propcache-0.5.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (25 kB)
+2026-10-25T01:43:32.1587685Z Collecting pycparser (from cffi>=1.5.0->pycares<6,>=5.0.0->aiodns>=1.1.1->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:32.1622004Z   Downloading pycparser-3.12-py3-none-any.whl.metadata (9.7 kB)
+2026-10-25T01:43:32.1738148Z Collecting mdurl~=0.1 (from markdown-it-py>=2.1.0->markdown-it-py[linkify]>=2.1.0->textual==8.2.8->-r requirements.txt (line 11))
+2026-10-25T01:43:32.1766560Z   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+2026-10-25T01:43:32.1874132Z Collecting linkify-it-py<3,>=1 (from markdown-it-py[linkify]>=2.1.0->textual==8.2.8->-r requirements.txt (line 11))
+2026-10-25T01:43:32.1907946Z   Downloading linkify_it_py-2.2.0-py3-none-any.whl.metadata (8.6 kB)
+2026-10-25T01:43:32.2024982Z Collecting six>=1.6 (from python-dateutil>=2.8.2->pandas==2.2.3->-r requirements.txt (line 9))
+2026-10-25T01:43:32.2057429Z   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+2026-10-25T01:43:32.3327985Z Collecting charset_normalizer<4,>=2 (from requests>=2.18.4->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:32.3362809Z   Downloading charset_normalizer-3.5.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (46 kB)
+2026-10-25T01:43:32.3544628Z Collecting urllib3<3,>=1.26 (from requests>=2.18.4->ccxt==4.4.87->-r requirements.txt (line 1))
+2026-10-25T01:43:32.3577388Z   Downloading urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+2026-10-25T01:43:32.3733587Z Downloading ccxt-4.4.87-py2.py3-none-any.whl (5.8 MB)
+2026-10-25T01:43:32.4376078Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.8/5.8 MB 92.1 MB/s  0:00:00
+2026-10-25T01:43:32.4410981Z Downloading PyYAML-6.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (759 kB)
+2026-10-25T01:43:32.4469776Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 759.5/759.5 kB 115.7 MB/s  0:00:00
+2026-10-25T01:43:32.4499131Z Downloading pydantic-2.10.6-py3-none-any.whl (431 kB)
+2026-10-25T01:43:32.4581856Z Downloading pydantic_settings-2.7.0-py3-none-any.whl (29 kB)
+2026-10-25T01:43:32.4639608Z Downloading typer-0.15.2-py3-none-any.whl (45 kB)
+2026-10-25T01:43:32.4691063Z Downloading structlog-24.4.0-py3-none-any.whl (67 kB)
+2026-10-25T01:43:32.4737575Z Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+2026-10-25T01:43:32.4793971Z Downloading numpy-2.2.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.1 MB)
+2026-10-25T01:43:32.6324041Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.1/16.1 MB 105.1 MB/s  0:00:00
+2026-10-25T01:43:32.6369463Z Downloading pandas-2.2.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.7 MB)
+2026-10-25T01:43:32.7918281Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 82.7 MB/s  0:00:00
+2026-10-25T01:43:32.7951921Z Downloading pytest-9.0.3-py3-none-any.whl (375 kB)
+2026-10-25T01:43:32.8010889Z Downloading textual-8.2.8-py3-none-any.whl (731 kB)
+2026-10-25T01:43:32.8070867Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 731.4/731.4 kB 110.2 MB/s  0:00:00
+2026-10-25T01:43:32.8106005Z Downloading pydantic_core-2.27.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.0 MB)
+2026-10-25T01:43:32.9051289Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 19.0 MB/s  0:00:00
+2026-10-25T01:43:32.9085339Z Downloading httpcore-1.0.9-py3-none-any.whl (78 kB)
+2026-10-25T01:43:32.9132445Z Downloading platformdirs-4.13.5-py3-none-any.whl (32 kB)
+2026-10-25T01:43:32.9182667Z Downloading pluggy-1.7.0-py3-none-any.whl (27 kB)
+2026-10-25T01:43:32.9245815Z Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-10-25T01:43:32.9350169Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 112.0 MB/s  0:00:00
+2026-10-25T01:43:32.9384108Z Downloading typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+2026-10-25T01:43:32.9431033Z Downloading aiodns-4.0.4-py3-none-any.whl (12 kB)
+2026-10-25T01:43:32.9485867Z Downloading pycares-5.2.1-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl (229 kB)
+2026-10-25T01:43:32.9542115Z Downloading aiohttp-3.14.5-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.9 MB)
+2026-10-25T01:43:32.9688459Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.9/1.9 MB 127.1 MB/s  0:00:00
+2026-10-25T01:43:32.9719500Z Downloading multidict-7.2.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (516 kB)
+2026-10-25T01:43:32.9791764Z Downloading yarl-1.25.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (117 kB)
+2026-10-25T01:43:32.9838979Z Downloading aiohappyeyeballs-2.7.1-py3-none-any.whl (15 kB)
+2026-10-25T01:43:32.9884118Z Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+2026-10-25T01:43:32.9929942Z Downloading annotated_types-0.8.0-py3-none-any.whl (13 kB)
+2026-10-25T01:43:33.0136684Z Downloading attrs-26.1.0-py3-none-any.whl (67 kB)
+2026-10-25T01:43:33.0229097Z Downloading certifi-2026.10.23-py3-none-any.whl (135 kB)
+2026-10-25T01:43:33.0277613Z Downloading cffi-2.1.1-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+2026-10-25T01:43:33.0328609Z Downloading click-8.5.0-py3-none-any.whl (125 kB)
+2026-10-25T01:43:33.0374410Z Downloading cryptography-50.0.2-cp311-abi3-manylinux_2_34_x86_64.whl (4.8 MB)
+2026-10-25T01:43:33.0691368Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.8/4.8 MB 150.4 MB/s  0:00:00
+2026-10-25T01:43:33.0730956Z Downloading frozenlist-1.8.0-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (234 kB)
+2026-10-25T01:43:33.1373534Z Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+2026-10-25T01:43:33.1445827Z Downloading idna-3.20-py3-none-any.whl (69 kB)
+2026-10-25T01:43:33.1492842Z Downloading iniconfig-2.3.1-py3-none-any.whl (7.6 kB)
+2026-10-25T01:43:33.1536703Z Downloading markdown_it_py-4.2.0-py3-none-any.whl (91 kB)
+2026-10-25T01:43:33.1586483Z Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-10-25T01:43:33.1632802Z Downloading linkify_it_py-2.2.0-py3-none-any.whl (21 kB)
+2026-10-25T01:43:33.1686348Z Downloading packaging-26.3-py3-none-any.whl (129 kB)
+2026-10-25T01:43:33.1736358Z Downloading propcache-0.5.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (234 kB)
+2026-10-25T01:43:33.1786613Z Downloading python_dateutil-3.0.0-py2.py3-none-any.whl (94 kB)
+2026-10-25T01:43:33.1832321Z Downloading python_dotenv-1.2.4-py3-none-any.whl (23 kB)
+2026-10-25T01:43:33.1878170Z Downloading pytz-2026.5-py2.py3-none-any.whl (506 kB)
+2026-10-25T01:43:33.1954180Z Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+2026-10-25T01:43:33.2005359Z Downloading charset_normalizer-3.5.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (254 kB)
+2026-10-25T01:43:33.2054894Z Downloading urllib3-2.8.0-py3-none-any.whl (135 kB)
+2026-10-25T01:43:33.2101987Z Downloading rich-15.0.0-py3-none-any.whl (310 kB)
+2026-10-25T01:43:33.2152244Z Downloading setuptools-84.2.1-py3-none-any.whl (876 kB)
+2026-10-25T01:43:33.2391379Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 876.3/876.3 kB 27.8 MB/s  0:00:00
+2026-10-25T01:43:33.2424585Z Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+2026-10-25T01:43:33.2467984Z Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+2026-10-25T01:43:33.2519501Z Downloading tzdata-2026.5-py2.py3-none-any.whl (347 kB)
+2026-10-25T01:43:33.2579312Z Downloading anyio-4.15.1-py3-none-any.whl (132 kB)
+2026-10-25T01:43:33.2629036Z Downloading mdit_py_plugins-0.6.1-py3-none-any.whl (66 kB)
+2026-10-25T01:43:33.2674186Z Downloading pycparser-3.12-py3-none-any.whl (62 kB)
+2026-10-25T01:43:33.6566892Z Installing collected packages: pytz, urllib3, tzdata, typing-extensions, structlog, six, shellingham, setuptools, pyyaml, python-dotenv, pygments, pycparser, propcache, pluggy, platformdirs, packaging, numpy, multidict, mdurl, linkify-it-py, iniconfig, idna, h11, frozenlist, click, charset_normalizer, certifi, attrs, annotated-types, aiohappyeyeballs, yarl, requests, python-dateutil, pytest, pydantic-core, markdown-it-py, httpcore, cffi, anyio, aiosignal, rich, pydantic, pycares, pandas, mdit-py-plugins, httpx, cryptography, aiohttp, typer, textual, pydantic-settings, aiodns, ccxt
+2026-10-25T01:43:46.0049070Z 
+2026-10-25T01:43:46.0089860Z Successfully installed aiodns-4.0.4 aiohappyeyeballs-2.7.1 aiohttp-3.14.5 aiosignal-1.4.0 annotated-types-0.8.0 anyio-4.15.1 attrs-26.1.0 ccxt-4.4.87 certifi-2026.10.23 cffi-2.1.1 charset_normalizer-3.5.2 click-8.5.0 cryptography-50.0.2 frozenlist-1.8.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.20 iniconfig-2.3.1 linkify-it-py-2.2.0 markdown-it-py-4.2.0 mdit-py-plugins-0.6.1 mdurl-0.1.2 multidict-7.2.1 numpy-2.2.2 packaging-26.3 pandas-2.2.3 platformdirs-4.13.5 pluggy-1.7.0 propcache-0.5.4 pycares-5.2.1 pycparser-3.12 pydantic-2.10.6 pydantic-core-2.27.2 pydantic-settings-2.7.0 pygments-2.21.0 pytest-9.0.3 python-dateutil-3.0.0 python-dotenv-1.2.4 pytz-2026.5 pyyaml-6.0.2 requests-2.34.2 rich-15.0.0 setuptools-84.2.1 shellingham-1.5.4 six-1.17.0 structlog-24.4.0 textual-8.2.8 typer-0.15.2 typing-extensions-4.16.0 tzdata-2026.5 urllib3-2.8.0 yarl-1.25.1
+2026-10-25T01:43:46.0097775Z 
+2026-10-25T01:43:46.0098204Z [notice] A new release of pip is available: 26.2.1 -> 26.2.2
+2026-10-25T01:43:46.0098671Z [notice] To update, run: pip install --upgrade pip
+2026-10-25T01:43:46.6845892Z Collecting pytest-cov
+2026-10-25T01:43:46.7416039Z   Downloading pytest_cov-7.1.0-py3-none-any.whl.metadata (32 kB)
+2026-10-25T01:43:47.1718294Z Collecting coverage>=7.10.6 (from coverage[toml]>=7.10.6->pytest-cov)
+2026-10-25T01:43:47.1828358Z   Downloading coverage-7.17.0-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (8.1 kB)
+2026-10-25T01:43:47.1861691Z Requirement already satisfied: pluggy>=1.2 in /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages (from pytest-cov) (1.7.0)
+2026-10-25T01:43:47.1865610Z Requirement already satisfied: pytest>=7 in /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages (from pytest-cov) (9.0.3)
+2026-10-25T01:43:47.1882203Z Requirement already satisfied: iniconfig>=1.0.1 in /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages (from pytest>=7->pytest-cov) (2.3.1)
+2026-10-25T01:43:47.1886145Z Requirement already satisfied: packaging>=22 in /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages (from pytest>=7->pytest-cov) (26.3)
+2026-10-25T01:43:47.1890902Z Requirement already satisfied: pygments>=2.7.2 in /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages (from pytest>=7->pytest-cov) (2.21.0)
+2026-10-25T01:43:47.2004733Z Downloading pytest_cov-7.1.0-py3-none-any.whl (22 kB)
+2026-10-25T01:43:47.2130931Z Downloading coverage-7.17.0-cp313-cp313-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (260 kB)
+2026-10-25T01:43:47.2898229Z Installing collected packages: coverage, pytest-cov
+2026-10-25T01:43:47.3926232Z 
+2026-10-25T01:43:47.3963393Z Successfully installed coverage-7.17.0 pytest-cov-7.1.0
+2026-10-25T01:43:47.3970633Z 
+2026-10-25T01:43:47.3970974Z [notice] A new release of pip is available: 26.2.1 -> 26.2.2
+2026-10-25T01:43:47.3971321Z [notice] To update, run: pip install --upgrade pip
+2026-10-25T01:43:47.4508073Z ##[group]Run pip check
+2026-10-25T01:43:47.4508292Z [36;1mpip check[0m
+2026-10-25T01:43:47.4567102Z shell: /usr/bin/bash -e {0}
+2026-10-25T01:43:47.4567308Z env:
+2026-10-25T01:43:47.4567466Z   PYTHONPATH: src
+2026-10-25T01:43:47.4567871Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.4568229Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+2026-10-25T01:43:47.4568591Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.4568906Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.4569215Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.4569545Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+2026-10-25T01:43:47.4569801Z ##[endgroup]
+2026-10-25T01:43:47.6783942Z No broken requirements found.
+2026-10-25T01:43:47.7058612Z ##[group]Run pytest tests -q --cov=src/gg_bot --cov-report=term-missing --cov-fail-under=50
+2026-10-25T01:43:47.7059117Z [36;1mpytest tests -q --cov=src/gg_bot --cov-report=term-missing --cov-fail-under=50[0m
+2026-10-25T01:43:47.7118047Z shell: /usr/bin/bash -e {0}
+2026-10-25T01:43:47.7118247Z env:
+2026-10-25T01:43:47.7118409Z   PYTHONPATH: src
+2026-10-25T01:43:47.7118654Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.7118997Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+2026-10-25T01:43:47.7119329Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.7119625Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.7119912Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:47.7120205Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+2026-10-25T01:43:47.7120458Z ##[endgroup]
+2026-10-25T01:43:53.1030721Z .............................................................            [100%]
+2026-10-25T01:43:53.1031613Z =============================== warnings summary ===============================
+2026-10-25T01:43:53.1032219Z ../../../../../opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/__init__.py:24
+2026-10-25T01:43:53.1033500Z   /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/__init__.py:24: DeprecationWarning: 'click.utils.get_binary_stream' is deprecated and will be removed in Click 9.0.
+2026-10-25T01:43:53.1034509Z     from click.utils import get_binary_stream as get_binary_stream
+2026-10-25T01:43:53.1034797Z 
+2026-10-25T01:43:53.1035111Z ../../../../../opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/__init__.py:25
+2026-10-25T01:43:53.1036173Z   /opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/__init__.py:25: DeprecationWarning: 'click.utils.get_text_stream' is deprecated and will be removed in Click 9.0.
+2026-10-25T01:43:53.1037081Z     from click.utils import get_text_stream as get_text_stream
+2026-10-25T01:43:53.1037358Z 
+2026-10-25T01:43:53.1037659Z tests/test_live_fixes.py::test_backtest_tolerates_none_manual
+2026-10-25T01:43:53.1038245Z   <frozen abc>:123: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f6114fb95d0>
+2026-10-25T01:43:53.1038890Z   Enable tracemalloc to get traceback where the object was allocated.
+2026-10-25T01:43:53.1039617Z   See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+2026-10-25T01:43:53.1040051Z 
+2026-10-25T01:43:53.1040270Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2026-10-25T01:43:53.1040740Z ================================ tests coverage ================================
+2026-10-25T01:43:53.1041210Z _______________ coverage: platform linux, python 3.13.16-final-0 _______________
+2026-10-25T01:43:53.1041549Z 
+2026-10-25T01:43:53.1041680Z Name                          Stmts   Miss  Cover   Missing
+2026-10-25T01:43:53.1042048Z -----------------------------------------------------------
+2026-10-25T01:43:53.1042417Z src/gg_bot/__init__.py            3      0   100%
+2026-10-25T01:43:53.1042782Z src/gg_bot/__main__.py            3      3     0%   1-4
+2026-10-25T01:43:53.1043313Z src/gg_bot/backtest.py           29     13    55%   23-33, 40-49
+2026-10-25T01:43:53.1044371Z src/gg_bot/cli.py               151    112    26%   16, 25-32, 38-48, 53-64, 81-103, 108-109, 114-117, 122-127, 137-151, 161-174, 182-201, 207-212, 218-225, 231-239, 244-249, 253
+2026-10-25T01:43:53.1045066Z src/gg_bot/config.py             62      2    97%   60, 70
+2026-10-25T01:43:53.1045804Z src/gg_bot/engine.py            582    336    42%   34, 39-40, 49-52, 56-59, 258-261, 265-270, 301-302, 407, 475-476, 516, 540, 543-544, 552-556, 565-579, 584-1130, 1134-1139, 1153-1186, 1191-1227
+2026-10-25T01:43:53.1046588Z src/gg_bot/exchanges.py          75     52    31%   9-50, 64-69, 80, 85-90
+2026-10-25T01:43:53.1047296Z src/gg_bot/indicators.py         69      3    96%   17, 98-99
+2026-10-25T01:43:53.1047726Z src/gg_bot/logging_setup.py      21     11    48%   17-32, 36-41
+2026-10-25T01:43:53.1048201Z src/gg_bot/orders.py             50     28    44%   8, 19-20, 40-67, 72-81, 87-92, 102-103, 107
+2026-10-25T01:43:53.1048685Z src/gg_bot/presets.py            42     14    67%   16-18, 25, 63-73
+2026-10-25T01:43:53.1049084Z src/gg_bot/risk.py               25      1    96%   30
+2026-10-25T01:43:53.1049468Z src/gg_bot/sizing.py             27      7    74%   23, 28, 31, 43-46
+2026-10-25T01:43:53.1049896Z src/gg_bot/state.py              49      7    86%   68-71, 80-84
+2026-10-25T01:43:53.1050419Z src/gg_bot/strategy.py          228     19    92%   50, 55-58, 175, 197, 202-203, 223-224, 282, 284, 291, 293-296, 341
+2026-10-25T01:43:53.1050967Z src/gg_bot/telegram.py           19     12    37%   9-21, 27, 31, 35
+2026-10-25T01:43:53.1051716Z src/gg_bot/tui.py               387    200    48%   65-66, 69-73, 76, 184-191, 197-198, 240-265, 283-286, 311, 320, 323-330, 333-381, 384-387, 390-398, 401-430, 433-454, 486-537, 540-554, 560-574
+2026-10-25T01:43:53.1073758Z -----------------------------------------------------------
+2026-10-25T01:43:53.1074129Z TOTAL                          1822    820    55%
+2026-10-25T01:43:53.1074509Z Required test coverage of 50% reached. Total coverage: 54.99%
+2026-10-25T01:43:53.1074881Z 61 passed, 3 warnings in 4.08s
+2026-10-25T01:43:53.2706303Z ##[group]Run python -m gg_bot config-validate --config config/config.example.yaml
+2026-10-25T01:43:53.2706791Z [36;1mpython -m gg_bot config-validate --config config/config.example.yaml[0m
+2026-10-25T01:43:53.2762323Z shell: /usr/bin/bash -e {0}
+2026-10-25T01:43:53.2762533Z env:
+2026-10-25T01:43:53.2762695Z   PYTHONPATH: src
+2026-10-25T01:43:53.2762935Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.2763592Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+2026-10-25T01:43:53.2763954Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.2764263Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.2764576Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.2764891Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+2026-10-25T01:43:53.2765153Z ##[endgroup]
+2026-10-25T01:43:53.5310122Z OK: mode=paper symbols=3
+2026-10-25T01:43:53.5643823Z ##[group]Run python -m gg_bot healthcheck --config config/config.example.yaml
+2026-10-25T01:43:53.5644275Z [36;1mpython -m gg_bot healthcheck --config config/config.example.yaml[0m
+2026-10-25T01:43:53.5700602Z shell: /usr/bin/bash -e {0}
+2026-10-25T01:43:53.5700808Z env:
+2026-10-25T01:43:53.5700969Z   PYTHONPATH: src
+2026-10-25T01:43:53.5701201Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.5701547Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+2026-10-25T01:43:53.5701887Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.5702195Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.5702493Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.5702795Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+2026-10-25T01:43:53.5703192Z ##[endgroup]
+2026-10-25T01:43:53.8209625Z {"ok": true, "mode": "paper", "symbols": 3}
+2026-10-25T01:43:53.8543481Z ##[group]Run python -m gg_bot --help
+2026-10-25T01:43:53.8543780Z [36;1mpython -m gg_bot --help[0m
+2026-10-25T01:43:53.8598981Z shell: /usr/bin/bash -e {0}
+2026-10-25T01:43:53.8599189Z env:
+2026-10-25T01:43:53.8599349Z   PYTHONPATH: src
+2026-10-25T01:43:53.8599582Z   pythonLocation: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.8599927Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib/pkgconfig
+2026-10-25T01:43:53.8600268Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.8600591Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.8600895Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.13.16/x64
+2026-10-25T01:43:53.8601196Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.13.16/x64/lib
+2026-10-25T01:43:53.8601458Z ##[endgroup]
+2026-10-25T01:43:54.1035902Z [1m                                                                                [0m
+2026-10-25T01:43:54.1037051Z [1m [0m[1;33mUsage: [0m[1mpython [0m[1;32m-m[0m[1m gg_bot [OPTIONS] COMMAND [ARGS]...[0m[1m                           [0m[1m [0m
+2026-10-25T01:43:54.1037970Z [1m                                                                                [0m
+2026-10-25T01:43:54.1038539Z  GG-Shot Ultimate v6 bot                                                        
+2026-10-25T01:43:54.1039097Z                                                                                 
+2026-10-25T01:43:54.1503277Z [31m╭─[0m[31m────────────────────[0m[31m [0m[1;31mTraceback [0m[1;2;31m(most recent call last)[0m[31m [0m[31m─────────────────────[0m[31m─╮[0m
+2026-10-25T01:43:54.1504306Z [31m│[0m in _run_module_as_main:203                                                   [31m│[0m
+2026-10-25T01:43:54.1505151Z [31m│[0m [34m╭─[0m[34m────────────────────────────────[0m[34m locals [0m[34m────────────────────────────────[0m[34m─╮[0m [31m│[0m
+2026-10-25T01:43:54.1506050Z [31m│[0m [34m│[0m   [3;33malter_argv[0m[31m =[0m [3;92mTrue[0m                                                      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1507234Z [31m│[0m [34m│[0m         [3;33mcode[0m[31m =[0m [1m<[0m[1;95mcode[0m[39m object <module> at [0m[1;36m0x7f974ab43630[0m[39m, file [0m            [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1508372Z [31m│[0m [34m│[0m                [32m"/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1509311Z [31m│[0m [34m│[0m                [39mline [0m[1;36m1[0m[1m>[0m                                                   [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1510187Z [31m│[0m [34m│[0m [3;33mmain_globals[0m[31m =[0m [1m{[0m                                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1511080Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__name__'[0m: [32m'__main__'[0m,                               [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1511698Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__doc__'[0m: [3;35mNone[0m,                                      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1512906Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__package__'[0m: [32m'gg_bot'[0m,                              [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1513950Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__loader__'[0m:                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1514582Z [31m│[0m [34m│[0m                [1m<[0m[1;95m_frozen_importlib_external.SourceFileLoader[0m[39m object at [0m   [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1515189Z [31m│[0m [34m│[0m                [1;36m0x7f974ab55400[0m[39m>,[0m                                          [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1516163Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__spec__'[0m[39m: [0m[1;35mModuleSpec[0m[1;39m([0m[33mname[0m[39m=[0m[32m'gg_bot.__main__'[0m[39m, [0m       [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1516894Z [31m│[0m [34m│[0m                [33mloader[0m[39m=<_frozen_importlib_external.SourceFileLoader [0m      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1517511Z [31m│[0m [34m│[0m                [39mobject at [0m[1;36m0x7f974ab55400[0m[39m>, [0m                               [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1518147Z [31m│[0m [34m│[0m                [33morigin[0m[39m=[0m[32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-u…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1518818Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__annotations__'[0m[39m: [0m[1;39m{[0m[1;39m}[0m[39m,[0m                                [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1519569Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__builtins__'[0m[39m: <module [0m[32m'builtins'[0m[39m [0m[1;39m([0m[39mbuilt-in[0m[1;39m)[0m[39m>,[0m       [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1520244Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__file__'[0m[39m: [0m                                          [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1520821Z [31m│[0m [34m│[0m                [32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1521387Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__cached__'[0m[39m: [0m                                        [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1521932Z [31m│[0m [34m│[0m                [32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1522578Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'app'[0m[39m: <typer.main.Typer object at [0m[1;36m0x7f9748c61400[0m[1m>[0m    [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1523936Z [31m│[0m [34m│[0m                [1m}[0m                                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1524827Z [31m│[0m [34m│[0m     [3;33mmod_name[0m[31m =[0m [32m'gg_bot.__main__'[0m                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1525618Z [31m│[0m [34m│[0m     [3;33mmod_spec[0m[31m =[0m [1;35mModuleSpec[0m[1m([0m[33mname[0m=[32m'gg_bot.__main__'[0m,                        [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1526340Z [31m│[0m [34m│[0m                [33mloader[0m=[1m<[0m[1;95m_frozen_importlib_external.SourceFileLoader[0m[39m [0m      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1526981Z [31m│[0m [34m│[0m                [39mobject at [0m[1;36m0x7f974ab55400[0m[1m>[0m,                                [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1527586Z [31m│[0m [34m│[0m                [33morigin[0m=[32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-u…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1528136Z [31m│[0m [34m╰──────────────────────────────────────────────────────────────────────────╯[0m [31m│[0m
+2026-10-25T01:43:54.1528570Z [31m│[0m in _run_code:88                                                              [31m│[0m
+2026-10-25T01:43:54.1529246Z [31m│[0m [34m╭─[0m[34m────────────────────────────────[0m[34m locals [0m[34m────────────────────────────────[0m[34m─╮[0m [31m│[0m
+2026-10-25T01:43:54.1529880Z [31m│[0m [34m│[0m       [3;33mcached[0m[31m =[0m [32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1530625Z [31m│[0m [34m│[0m         [3;33mcode[0m[31m =[0m [1m<[0m[1;95mcode[0m[39m object <module> at [0m[1;36m0x7f974ab43630[0m[39m, file [0m            [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1531300Z [31m│[0m [34m│[0m                [32m"/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1531860Z [31m│[0m [34m│[0m                [39mline [0m[1;36m1[0m[1m>[0m                                                   [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1532581Z [31m│[0m [34m│[0m        [3;33mfname[0m[31m =[0m [32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1533457Z [31m│[0m [34m│[0m [3;33minit_globals[0m[31m =[0m [3;35mNone[0m                                                      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1534141Z [31m│[0m [34m│[0m       [3;33mloader[0m[31m =[0m [1m<[0m[1;95m_frozen_importlib_external.SourceFileLoader[0m[39m object at [0m   [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1534782Z [31m│[0m [34m│[0m                [1;36m0x7f974ab55400[0m[1m>[0m                                           [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1535324Z [31m│[0m [34m│[0m     [3;33mmod_name[0m[31m =[0m [32m'__main__'[0m                                                [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1535975Z [31m│[0m [34m│[0m     [3;33mmod_spec[0m[31m =[0m [1;35mModuleSpec[0m[1m([0m[33mname[0m=[32m'gg_bot.__main__'[0m,                        [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1536688Z [31m│[0m [34m│[0m                [33mloader[0m=[1m<[0m[1;95m_frozen_importlib_external.SourceFileLoader[0m[39m [0m      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1537318Z [31m│[0m [34m│[0m                [39mobject at [0m[1;36m0x7f974ab55400[0m[1m>[0m,                                [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1537912Z [31m│[0m [34m│[0m                [33morigin[0m=[32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-u…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1538511Z [31m│[0m [34m│[0m     [3;33mpkg_name[0m[31m =[0m [32m'gg_bot'[0m                                                  [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1539053Z [31m│[0m [34m│[0m  [3;33mrun_globals[0m[31m =[0m [1m{[0m                                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1539623Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__name__'[0m: [32m'__main__'[0m,                               [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1540187Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__doc__'[0m: [3;35mNone[0m,                                      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1540733Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__package__'[0m: [32m'gg_bot'[0m,                              [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1541256Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__loader__'[0m:                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1541832Z [31m│[0m [34m│[0m                [1m<[0m[1;95m_frozen_importlib_external.SourceFileLoader[0m[39m object at [0m   [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1542414Z [31m│[0m [34m│[0m                [1;36m0x7f974ab55400[0m[39m>,[0m                                          [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1543272Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__spec__'[0m[39m: [0m[1;35mModuleSpec[0m[1;39m([0m[33mname[0m[39m=[0m[32m'gg_bot.__main__'[0m[39m, [0m       [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1544115Z [31m│[0m [34m│[0m                [33mloader[0m[39m=<_frozen_importlib_external.SourceFileLoader [0m      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1544714Z [31m│[0m [34m│[0m                [39mobject at [0m[1;36m0x7f974ab55400[0m[39m>, [0m                               [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1545320Z [31m│[0m [34m│[0m                [33morigin[0m[39m=[0m[32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-u…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1545975Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__annotations__'[0m[39m: [0m[1;39m{[0m[1;39m}[0m[39m,[0m                                [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1546890Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__builtins__'[0m[39m: <module [0m[32m'builtins'[0m[39m [0m[1;39m([0m[39mbuilt-in[0m[1;39m)[0m[39m>,[0m       [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1547583Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__file__'[0m[39m: [0m                                          [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1548140Z [31m│[0m [34m│[0m                [32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1548702Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'__cached__'[0m[39m: [0m                                        [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1549254Z [31m│[0m [34m│[0m                [32m'/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate…[0m [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1549893Z [31m│[0m [34m│[0m                [2;32m│   [0m[32m'app'[0m[39m: <typer.main.Typer object at [0m[1;36m0x7f9748c61400[0m[1m>[0m    [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1550445Z [31m│[0m [34m│[0m                [1m}[0m                                                         [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1550970Z [31m│[0m [34m│[0m  [3;33mscript_name[0m[31m =[0m [3;35mNone[0m                                                      [34m│[0m [31m│[0m
+2026-10-25T01:43:54.1551497Z [31m│[0m [34m╰──────────────────────────────────────────────────────────────────────────╯[0m [31m│[0m
+2026-10-25T01:43:54.1551895Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1552389Z [31m│[0m [2m/home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot/src/gg_bot/[0m[1m__mai[0m [31m│[0m
+2026-10-25T01:43:54.1552918Z [31m│[0m [1mn__.py[0m:4 in <module>                                                         [31m│[0m
+2026-10-25T01:43:54.1553462Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1554016Z [31m│[0m   [2m1 [0m[94mfrom[0m[90m [0m[4;96m.[0m[4;96mcli[0m[90m [0m[94mimport[0m app                                                     [31m│[0m
+2026-10-25T01:43:54.1554652Z [31m│[0m   [2m2 [0m                                                                         [31m│[0m
+2026-10-25T01:43:54.1555182Z [31m│[0m   [2m3 [0m[94mif[0m [91m__name__[0m == [33m"[0m[33m__main__[0m[33m"[0m:                                               [31m│[0m
+2026-10-25T01:43:54.1555719Z [31m│[0m [31m❱ [0m4 [2m│   [0m[1;4mapp()[0m                                                                [31m│[0m
+2026-10-25T01:43:54.1556157Z [31m│[0m   [2m5 [0m                                                                         [31m│[0m
+2026-10-25T01:43:54.1556527Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1557029Z [31m│[0m [34m╭─[0m[34m────────────────────[0m[34m locals [0m[34m─────────────────────[0m[34m─╮[0m                        [31m│[0m
+2026-10-25T01:43:54.1557852Z [31m│[0m [34m│[0m [3;33mapp[0m[31m =[0m [1m<[0m[1;95mtyper.main.Typer[0m[39m object at [0m[1;36m0x7f9748c61400[0m[1m>[0m [34m│[0m                        [31m│[0m
+2026-10-25T01:43:54.1558476Z [31m│[0m [34m╰───────────────────────────────────────────────────╯[0m                        [31m│[0m
+2026-10-25T01:43:54.1558866Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1559364Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mm[0m [31m│[0m
+2026-10-25T01:43:54.1559888Z [31m│[0m [1main.py[0m:339 in __call__                                                       [31m│[0m
+2026-10-25T01:43:54.1560290Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1560772Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mm[0m [31m│[0m
+2026-10-25T01:43:54.1561288Z [31m│[0m [1main.py[0m:322 in __call__                                                       [31m│[0m
+2026-10-25T01:43:54.1561685Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1562155Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1562655Z [31m│[0m [1more.py[0m:1631 in __call__                                                      [31m│[0m
+2026-10-25T01:43:54.1563161Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1563633Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1564129Z [31m│[0m [1more.py[0m:740 in main                                                           [31m│[0m
+2026-10-25T01:43:54.1564508Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1564983Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1565484Z [31m│[0m [1more.py[0m:194 in _main                                                          [31m│[0m
+2026-10-25T01:43:54.1565857Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1566320Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1566824Z [31m│[0m [1more.py[0m:1362 in make_context                                                  [31m│[0m
+2026-10-25T01:43:54.1567210Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1567669Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1568176Z [31m│[0m [1more.py[0m:1988 in parse_args                                                    [31m│[0m
+2026-10-25T01:43:54.1568705Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1569190Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1569687Z [31m│[0m [1more.py[0m:1373 in parse_args                                                    [31m│[0m
+2026-10-25T01:43:54.1570073Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1570546Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1571063Z [31m│[0m [1more.py[0m:2778 in handle_parse_result                                           [31m│[0m
+2026-10-25T01:43:54.1571470Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1572046Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1572560Z [31m│[0m [1more.py[0m:3660 in process_value                                                 [31m│[0m
+2026-10-25T01:43:54.1572955Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1573580Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1574093Z [31m│[0m [1more.py[0m:2640 in process_value                                                 [31m│[0m
+2026-10-25T01:43:54.1574483Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1574945Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1md[0m [31m│[0m
+2026-10-25T01:43:54.1575470Z [31m│[0m [1mecorators.py[0m:615 in show_help                                                [31m│[0m
+2026-10-25T01:43:54.1575877Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1576337Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1576835Z [31m│[0m [1more.py[0m:839 in get_help                                                       [31m│[0m
+2026-10-25T01:43:54.1577217Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1577678Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/click/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1578175Z [31m│[0m [1more.py[0m:1239 in get_help                                                      [31m│[0m
+2026-10-25T01:43:54.1578560Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1579024Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mc[0m [31m│[0m
+2026-10-25T01:43:54.1579534Z [31m│[0m [1more.py[0m:754 in format_help                                                    [31m│[0m
+2026-10-25T01:43:54.1579923Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1580390Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mr[0m [31m│[0m
+2026-10-25T01:43:54.1580913Z [31m│[0m [1mich_utils.py[0m:611 in rich_format_help                                         [31m│[0m
+2026-10-25T01:43:54.1581316Z [31m│[0m                                                                              [31m│[0m
+2026-10-25T01:43:54.1581772Z [31m│[0m [2m/opt/hostedtoolcache/Python/3.13.16/x64/lib/python3.13/site-packages/typer/[0m[1mr[0m [31m│[0m
+2026-10-25T01:43:54.1582298Z [31m│[0m [1mich_utils.py[0m:370 in _print_options_panel                                     [31m│[0m
+2026-10-25T01:43:54.1582911Z [31m╰──────────────────────────────────────────────────────────────────────────────╯[0m
+2026-10-25T01:43:54.1583604Z [1;91mTypeError: [0m[1;35mParameter.make_metavar[0m[1m([0m[1m)[0m missing [1;36m1[0m required positional argument: 
+2026-10-25T01:43:54.1584001Z [32m'ctx'[0m
+2026-10-25T01:43:54.1835826Z ##[error]Process completed with exit code 1.
+2026-10-25T01:43:54.1951986Z Post job cleanup.
+2026-10-25T01:43:54.2622762Z [command]/usr/bin/git version
+2026-10-25T01:43:54.2658490Z git version 2.55.0
+2026-10-25T01:43:54.2688807Z Temporarily overriding HOME='/home/runner/work/_temp/2776a9e6-1e45-40bb-9d64-ce428349d068' before making global git config changes
+2026-10-25T01:43:54.2689962Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-25T01:43:54.2693896Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/gg-shot-ultimate-bot/gg-shot-ultimate-bot
+2026-10-25T01:43:54.2726970Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-25T01:43:54.2763157Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-25T01:43:54.2961098Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-25T01:43:54.2986397Z http.https://github.com/.extraheader
+2026-10-25T01:43:54.3004443Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-25T01:43:54.3036222Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-25T01:43:54.3298763Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-25T01:43:54.3334337Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-25T01:43:54.3649365Z Cleaning up orphan processes
+2026-10-25T01:43:54.3970621Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
