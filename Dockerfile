@@ -10,6 +10,6 @@ COPY src /app/src
 COPY config /app/config
 RUN chown -R botuser:botuser /app
 USER botuser
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python -m gg_bot healthcheck || exit 1
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 CMD python -m gg_bot healthcheck --config /app/config/config.example.yaml || exit 1
 ENTRYPOINT ["python", "-m", "gg_bot"]
 CMD ["run", "--config", "/app/config/config.yaml"]

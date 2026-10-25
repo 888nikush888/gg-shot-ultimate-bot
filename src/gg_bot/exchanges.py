@@ -71,6 +71,16 @@ def fetch_position_qty(ex, symbol: str) -> float:
         pass
     return 0.0
 
+def price_tick(ex, symbol: str) -> float | None:
+    """Kleinste Preisschrittweite aus Market-Precision (fuer Trendlinien-/S-R-Stops)."""
+    try:
+        ex.load_markets()
+        prec = (ex.market(symbol).get("precision") or {}).get("price")
+        return 10.0 ** (-int(prec))
+    except Exception:
+        return None
+
+
 def market_limits(ex, symbol: str) -> dict:
     ex.load_markets()
     m = ex.market(symbol)

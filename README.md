@@ -41,7 +41,7 @@ Engine: Closed-Candle-Signale (kein Repaint), Trendlinie/Breakout, ATR/RSI/Volum
 - **Equity:** aus der Settlement-Waehrung des Symbols (z. B. USDC bei Hyperliquid). Kein Rueckfall auf 10000 im Live-Modus: ohne Guthaben wird das Symbol mit klarem Fehler blockiert.
 - **Positionsschutz:** kein Entry bei offener/verwaister Position; Cooldown in Kerzen nach Close; Kill-Switch blockiert Entries und schliesst live alles.
 - **Exits:** `bot_managed` ueberwacht SL/TP1-4/BE/Trailing/Opposite/Oszillator aktiv; `exchange_native` legt volles Bracket (SL + alle TP-Tranchen, gewichtet) und zieht den Boersen-SL bei BE/Trailing nach. Paper tradet die gleiche Logik simuliert.
-- **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); `leverage` 1-50 (Config-Validierung); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
+- **Fixiert:** `legs: 1` + `entry_mode: Market` (andere Modi brechen mit Fail-fast ab statt falsch zu rechnen); `leverage` 1-125 (Config-Validierung, Pine-Maximum); Smooth-Trendlinie nutzt den regime-adaptiven Filter aus Pine v6.
 - **Order-Guards:** Entries unter Exchange-Minimum (`min_amount`/`min_cost`) werden geskippt; in `exchange_native` werden TP/SL/BE/TRAIL nur gebucht (Ausfuehrung nativ, kein Doppel-Exit), der Boersen-SL wird per Order-ID nachgezogen; Fehlermeldungen max. 1x pro Symbol und Viertelstunde; Equity wird 60 s gecacht.
 - **Presets:** 78 Keys (26 Assets x 3 Timeframes) + Finetune-Overrides. Tages-PnL setzt sich bei Neustart zurueck (Limit gilt pro Laufzeit).
 ## Einstellungen (alles einstellbar, Presets fuellen)

@@ -94,8 +94,10 @@ def test_leverage_range_rejected():
     import pytest as _pt
     from gg_bot.config import SymbolCfg
     with _pt.raises(Exception):
-        SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=100)
-    assert SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=50).leverage == 50
+        SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=126)
+    with _pt.raises(Exception):
+        SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=0)
+    assert SymbolCfg(exchange="hyperliquid", symbol="BTC/USDC:USDC", asset_preset="BTC", timeframe="1h", leverage=125).leverage == 125
 
 def test_backtest_tolerates_none_manual():
     import numpy as np, pandas as pd

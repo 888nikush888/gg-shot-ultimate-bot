@@ -11,10 +11,12 @@ CREATE TABLE IF NOT EXISTS audit(ts TEXT, actor TEXT, action TEXT, detail TEXT);
 CREATE TABLE IF NOT EXISTS open_cycles(exchange TEXT, symbol TEXT, payload TEXT, updated TEXT, PRIMARY KEY (exchange, symbol));
 """
 
-def connect(path: str) -> sqlite3.Connection:
+def connect(path: str, audit_keep: int = 20000) -> sqlite3.Connection:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(path)
     c.executescript(SCHEMA)
+    c.execute("DELETE FROM audit WHERE rowid NOT IN (SELECT rowid FROM audit ORDER BY rowid DESC LIMIT ?)", (audit_keep,))
+    c.commit()
     return c
 
 def audit(c: sqlite3.Connection, actor: str, action: str, detail: str = "") -> None:

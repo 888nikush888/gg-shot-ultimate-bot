@@ -32,21 +32,3 @@ def plan_qty(equity: float, avg_plan: float, point_value: float, sizing: str,
             per_leg_lots.append(alloc)
             lots_left -= alloc
     return [x * lot for x in per_leg_lots], total_qty, max_position_value, ""
-
-def split_tp_qty(total_qty: float, weights: list[float], tp_count: int, lot: float) -> list[float]:
-    """Split whole position across TP tranches by weight (floor + remainder to last)."""
-    w = weights[:tp_count]
-    wsum = sum(w)
-    total_lots = int(math.floor(total_qty / lot + 1e-9))
-    if total_lots < tp_count:
-        raise ValueError("qty below tranche minimum")
-    out_lots, left = [], total_lots
-    for j in range(tp_count):
-        if j == tp_count - 1:
-            out_lots.append(left)
-        else:
-            q = max(1, int(math.floor(total_lots * w[j] / wsum)))
-            q = min(q, left - (tp_count - j - 1))
-            out_lots.append(q)
-            left -= q
-    return [x * lot for x in out_lots]
