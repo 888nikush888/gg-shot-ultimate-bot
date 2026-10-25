@@ -1,4 +1,4 @@
-ccxt==4.4.87
+ccxt==4.5.89
 pyyaml==6.0.2
 pydantic==2.10.6
 pydantic-settings==2.7.0
