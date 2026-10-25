@@ -807,8 +807,6 @@ def _warn_unknown_manual(cfg) -> None:
 
 
 def _setup_run(cfg: AppCfg) -> dict:
-    from .state import kill_flag_reason
-
     _flag = kill_flag_reason(cfg.state_path)
     risk = RiskState(
         killed=cfg.risk.kill_switch_on_start or _flag is not None,
