@@ -1,10 +1,12 @@
 """Preset resolution: presets.json (transcribed Pine f_cfg_* tables) + finetune."""
+
 from __future__ import annotations
 import json
 from pathlib import Path
 from functools import lru_cache
 
 PRESETS_PATH = Path(__file__).resolve().parents[2] / "config" / "presets.json"
+
 
 @lru_cache(maxsize=1)
 def load_presets(path: str | Path | None = None) -> dict:
@@ -16,20 +18,40 @@ def load_presets(path: str | Path | None = None) -> dict:
             p = alt
     return json.loads(p.read_text(encoding="utf-8"))
 
+
 def preset_key(asset: str, timeframe: str) -> str:
     if asset == "Manuell":
         return "Manuell"
     return f"{asset}_{timeframe}"
 
+
 def _manuell_defaults() -> dict:
     db = load_presets()
     base: dict = {}
-    for k in ("_defaults_signal", "_defaults_filter", "_defaults_tp_sl", "_defaults_trail"):
+    for k in (
+        "_defaults_signal",
+        "_defaults_filter",
+        "_defaults_tp_sl",
+        "_defaults_trail",
+    ):
         base.update(db.get(k, {}))
-    base.update({"mode": "Standard", "timing": "Kerzenschluss", "atr_len": 14, "regime_len": 100,
-                 "adapt_min": 0.5, "adapt_max": 2.0, "volume_len": 20,
-                 "osc_low": 20, "osc_high": 80, "osc_rsi_len": 14, "osc_stoch_len": 14,
-                 "osc_k_len": 3, "osc_d_len": 3})
+    base.update(
+        {
+            "mode": "Standard",
+            "timing": "Kerzenschluss",
+            "atr_len": 14,
+            "regime_len": 100,
+            "adapt_min": 0.5,
+            "adapt_max": 2.0,
+            "volume_len": 20,
+            "osc_low": 20,
+            "osc_high": 80,
+            "osc_rsi_len": 14,
+            "osc_stoch_len": 14,
+            "osc_k_len": 3,
+            "osc_d_len": 3,
+        }
+    )
     return base
 
 
@@ -49,6 +71,7 @@ def get_preset(asset: str, timeframe: str, fine_tune: bool = False, path=None) -
         base = dict(base)
         base.update(db.get("_finetune_overrides", {}).get(key, {}))
     return base
+
 
 def list_presets(path=None) -> list[str]:
     db = load_presets(path)

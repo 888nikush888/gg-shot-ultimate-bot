@@ -1,7 +1,9 @@
 """Live guardrails: daily loss, kill switch, cooldown."""
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+
 
 @dataclass
 class RiskState:
@@ -20,7 +22,10 @@ class RiskState:
         self.new_day(today)
         self.day_pnl += pnl
         if equity > 0 and (-self.day_pnl) >= equity * max_daily_loss_pct / 100.0:
-            self.killed, self.kill_reason = True, f"max daily loss hit: {self.day_pnl:.2f}"
+            self.killed, self.kill_reason = (
+                True,
+                f"max daily loss hit: {self.day_pnl:.2f}",
+            )
             return self.kill_reason
         return ""
 
