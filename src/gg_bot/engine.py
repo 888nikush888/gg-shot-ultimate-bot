@@ -264,7 +264,9 @@ def monitor(cycle: dict, price: float, hi: float, lo: float, atr_v: float,
     return out
 
 def run_loop(cfg: AppCfg, once: bool = False) -> None:
-    risk = RiskState(killed=cfg.risk.kill_switch_on_start, kill_reason="kill_switch_on_start" if cfg.risk.kill_switch_on_start else "")
+    from .state import kill_flag_reason
+    _flag = kill_flag_reason(cfg.state_path)
+    risk = RiskState(killed=cfg.risk.kill_switch_on_start or _flag is not None, kill_reason="kill_switch_on_start" if cfg.risk.kill_switch_on_start else (_flag or ""))
     db = connect(cfg.state_path)
     if (cfg.manual or {}).get("legs", 1) != 1 or (cfg.manual or {}).get("entry_mode", "Market") != "Market":
         raise SystemExit("nur legs=1 + entry_mode=Market werden unterstuetzt (Fail-fast statt stiller Fehlberechnung)")
@@ -295,6 +297,9 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
     cycle_no = 0
     tf_min = {s.symbol: TF_MINUTES.get(s.timeframe, 60) for s in cfg.symbols}
     while True:
+        _flag = kill_flag_reason(cfg.state_path)
+        if _flag is not None and not risk.killed:
+            risk.engage("flag: " + _flag)
         for s in cfg.symbols:
             if not s.enabled:
                 continue

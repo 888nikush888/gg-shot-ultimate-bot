@@ -125,10 +125,47 @@ def kill_engage(config: str = typer.Option("/app/config/config.yaml", "--config"
     import datetime
     db.execute("INSERT INTO kills VALUES (?,?)", (datetime.datetime.now(datetime.timezone.utc).isoformat(), reason))
     db.commit(); audit(db, "cli", "kill-engage", reason)
+    from .state import engage_kill_flag
+    engage_kill_flag(cfg.state_path, reason)
     from . import telegram as TG
     if cfg.telegram.enabled:
         TG.killed(reason)
     typer.echo(f"killed: {reason}")
+
+@app.command("kill-reset")
+def kill_reset(config: str = typer.Option("/app/config/config.yaml", "--config")):
+    """Remove kill flag so entries resume (live still needs review)."""
+    from .state import connect, audit, clear_kill_flag
+    cfg = load_config(config)
+    clear_kill_flag(cfg.state_path)
+    audit(connect(cfg.state_path), "cli", "kill-reset", "")
+    typer.echo("kill flag cleared")
+
+
+@app.command("dashboard-hash-password")
+def dashboard_hash_password():
+    """Print a DASHBOARD_PASSWORD_HASH line for .env (paste it, never commit plaintext)."""
+    import getpass
+    from .tui import hash_password
+    pw = getpass.getpass("dashboard password: ")
+    again = getpass.getpass("repeat: ")
+    if not pw or pw != again:
+        raise typer.Exit("empty or mismatch, nothing printed")
+    typer.echo("DASHBOARD_PASSWORD_HASH=" + hash_password(pw))
+
+
+@app.command("dashboard")
+def dashboard(config: str = typer.Option("/app/config/config.yaml", "--config")):
+    """Open the interactive terminal dashboard (password gate via DASHBOARD_PASSWORD_HASH)."""
+    import getpass
+    from .tui import DashboardApp, verify_password
+    for attempt in range(3):
+        if verify_password(getpass.getpass("dashboard password: ")):
+            break
+    else:
+        raise typer.Exit("access denied")
+    DashboardApp(config).run()
+
 
 @app.command("telegram-test")
 def telegram_test():
