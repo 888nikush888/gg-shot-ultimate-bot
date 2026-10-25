@@ -11,7 +11,7 @@ class RiskState:
     day_pnl: float = 0.0
     killed: bool = False
     kill_reason: str = ""
-    last_flat_bar: dict[str, int] = field(default_factory=dict)
+    last_flat_bar: dict[str, float] = field(default_factory=dict)
 
     def new_day(self, today: str) -> None:
         if self.day != today:
