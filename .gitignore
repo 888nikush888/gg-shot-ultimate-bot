@@ -9,4 +9,4 @@ config/config.yaml
 .coverage*
 
 audit*_out.txt
-jobjlog.txt
+joblog.txt
