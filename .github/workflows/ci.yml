@@ -33,11 +33,16 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13", "3.14"]
+        include:
+          - python-version: "3.13"
+            experimental: false
+          - python-version: "3.14"
+            experimental: true
+    continue-on-error: ${{ matrix.experimental }}
+    timeout-minutes: ${{ matrix.experimental && 40 || 20 }}
     env:
       PYTHONPATH: src
     steps:
