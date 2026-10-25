@@ -105,6 +105,39 @@ def should_resize_native_stop(order_mode: str, live: bool, closes: list) -> bool
     return live and order_mode == "exchange_native" and any(r == "TP" for _, _, r in closes)
 
 
+KNOWN_MANUAL_KEYS = frozenset(["mode","timing","allow_long","allow_short","sizing","risk_pct","capital_pct","legs","entry_mode","entry_unit","pullback_distance","limit_life","tp_weights","fee_pct","be_r","trail_r","trail_start","tp_mode_1","tp_mode_2","tp_mode_3","tp_mode_4","bounce_on","sr_bounce_on","reentry_on","max_reentries","zone_atr","osc_mode","osc_entries","osc_reentries","osc_exit","osc_exit_after","osc_rsi_len","osc_stoch_len","osc_k_len","osc_d_len","osc_low","osc_high","div_mode","div_age","pivot_len","session_on","trade_session","session_days","session_zone","date_start","date_end","close_session","volume_len","tp_adapt_min","tp_adapt_max","profit_trail_1","profit_trail_2","profit_trail_3","profit_trail_4","profit_trail_unit","stop_pad_ticks","stop_pct","stop_atr_mult","atr_len","regime_len","adapt_min","adapt_max"])
+
+def unknown_manual_keys(manual: dict, known: frozenset = KNOWN_MANUAL_KEYS) -> list[str]:
+    from . import presets as _pp
+    base: set[str] = set(known)
+    try:
+        db = _pp.load_presets()
+        for _k, _v in db.items():
+            if not _k.startswith("_") and isinstance(_v, dict):
+                base.update(_v.keys())
+    except Exception:
+        pass
+    return sorted(set((manual or {}).keys()) - base)
+
+
+def validate_manual(manual: dict | None) -> dict:
+    from .strategy import normalize_manual
+    man = normalize_manual(manual)
+    if man.get("mode", "Standard") not in ("Standard", "Advanced", "Channel"):
+        raise SystemExit("mode muss Standard/Advanced/Channel sein (Classic braucht Gewinn-Trailing-Engine)")
+    for _j in range(1, 5):
+        if man.get(f"tp_mode_{_j}", "Fest") != "Fest":
+            raise SystemExit("nur tp_mode Fest wird unterstuetzt (ATR-adaptiv/Gewinn-Trailing braucht Ziel-Neuberechnung)")
+    if man.get("legs", 1) != 1 or man.get("entry_mode", "Market") not in ("Market", "Pullback-Limit"):
+        raise SystemExit("nur legs=1 + entry_mode Market/Pullback-Limit werden unterstuetzt (kein Gestaffelt)")
+    _w = man.get("tp_weights", [30.0, 25.0, 15.0, 10.0])
+    if not isinstance(_w, list) or len(_w) < 1 or not all(isinstance(x, (int, float)) and x > 0 for x in _w):
+        raise SystemExit("tp_weights braucht eine nicht-leere Liste positiver Zahlen")
+    if man.get("trail_start", "TP1") not in ("Sofort", "TP1", "TP2", "TP3", "TP4", "R"):
+        raise SystemExit("trail_start muss Sofort/TP1-4/R sein")
+    return man
+
+
 def pullback_anchor(price: float, side: str, atr_v: float, manual: dict) -> float:
     sgn = 1 if side == "long" else -1
     if manual.get("entry_unit", "ATR") == "ATR":
@@ -183,14 +216,42 @@ def evaluate(df: pd.DataFrame, preset: dict, manual: dict, trend_entries: int = 
             "atr": float(last["atr"] if pd.notna(last["atr"]) else 0.0),
             "trend_line": float(last["trend_line"] if pd.notna(last["trend_line"]) else last["close"]),
             "trend_no": int(last.get("trend_no", 0)),
+            "support": float(last["support"]) if pd.notna(last.get("support", float("nan"))) else None,
+            "resistance": float(last["resistance"]) if pd.notna(last.get("resistance", float("nan"))) else None,
+            "bb_up": float(last["bb_up"]) if pd.notna(last.get("bb_up", float("nan"))) else None,
+            "bb_dn": float(last["bb_dn"]) if pd.notna(last.get("bb_dn", float("nan"))) else None,
+            "rng_up": float(last["upper"]) if pd.notna(last.get("upper", float("nan"))) else None,
+            "rng_lo": float(last["lower"]) if pd.notna(last.get("lower", float("nan"))) else None,
             "osc_long": osc_l, "osc_short": osc_s,
             "bounce_long": bool(last.get("bounce_long", False)),
             "bounce_short": bool(last.get("bounce_short", False))}
 
-def entry_prices(anchor: float, side: str, stop_mode: str, preset: dict, atr_v: float) -> float:
+def entry_prices(anchor: float, side: str, stop_mode: str, preset: dict, atr_v: float, ref: dict | None = None) -> float:
+    sgn = 1 if side == "long" else -1
     if stop_mode == "Prozent":
-        return anchor * (1 - (1 if side == "long" else -1) * float(preset.get("stop_pct", 3.0)) / 100)
-    return anchor - (1 if side == "long" else -1) * atr_v * float(preset.get("stop_atr_mult", 6.0))
+        return anchor * (1 - sgn * float(preset.get("stop_pct", 3.0)) / 100)
+    if stop_mode == "ATR":
+        return anchor - sgn * atr_v * float(preset.get("stop_atr_mult", 6.0))
+    if ref is None:
+        raise ValueError(f"stop_mode {stop_mode} braucht Trendlinie/S-R-Referenz (kein stiller ATR-Fallback)")
+    tick = ref.get("tick")
+    pad = float(ref.get("pad_ticks", 1)) * tick if tick else None
+    if stop_mode == "Trendlinie":
+        if ref.get("trend_line") is None or pad is None:
+            raise ValueError("Trendlinien-Stop braucht trend_line + tick")
+        return float(ref["trend_line"]) - sgn * pad
+    if stop_mode == "S/R":
+        lvl = ref.get("support") if side == "long" else ref.get("resistance")
+        if lvl is None or pad is None:
+            raise ValueError("S/R-Stop braucht Support/Resistance + tick")
+        return float(lvl) - sgn * pad
+    if stop_mode == "Automatisch":
+        pct = anchor * (1 - sgn * float(preset.get("stop_pct", 3.0)) / 100)
+        rev = anchor - sgn * abs(anchor - float(ref.get("reverse", anchor)))
+        if pad is not None:
+            rev = rev - sgn * pad
+        return max(pct, rev) if side == "long" else min(pct, rev)
+    raise ValueError(f"unbekannter stop_mode: {stop_mode}")
 
 def build_cycle(cycle_no: int, side: str, qty: float, entry: float, stop: float,
                 preset: dict, manual: dict, atr_v: float) -> dict:
@@ -214,7 +275,7 @@ def build_cycle(cycle_no: int, side: str, qty: float, entry: float, stop: float,
             "stop_reason": "SL", "tps": tps, "extreme": entry, "realized": 0.0,
             "risk_r": abs(entry - stop),
             "be_mode": preset.get("be_mode", "Aus"), "be_buffer": float(preset.get("be_buffer", 0.0)),
-            "trail_mode": preset.get("trail_mode", "Aus"), "trail_atr": float(preset.get("trail_atr", 3.0)),
+            "trail_mode": preset.get("trail_mode", "Aus"), "trail_start": (manual or {}).get("trail_start", "TP1"), "trail_atr": float(preset.get("trail_atr", 3.0)),
             "trail_pct": float(preset.get("trail_pct", 1.0)),
             "opposite_mode": preset.get("opposite_mode", "Ignorieren"),
             "fee_pct": float((manual or {}).get("fee_pct", 0.05)),
@@ -262,7 +323,7 @@ def monitor(cycle: dict, price: float, hi: float, lo: float, atr_v: float,
     # 4. trailing
     tm = cycle["trail_mode"]
     tr_thr = float((manual or {}).get("trail_r", 1.0))
-    if tm != "Aus" and S.trigger_hit("TP1", cur_hits, rr, tr_thr):
+    if tm != "Aus" and S.trigger_hit(cycle.get("trail_start", "TP1"), cur_hits, rr, tr_thr):
         cand = None
         if tm == "ATR":
             cand = cycle["extreme"] - sgn * atr_v * cycle["trail_atr"]
@@ -312,6 +373,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
     for _j in range(1, 5):
         if man.get(f"tp_mode_{_j}", "Fest") != "Fest":
             raise SystemExit("nur tp_mode Fest wird unterstuetzt (ATR-adaptiv/Gewinn-Trailing braucht Ziel-Neuberechnung)")
+    validate_manual(man)
     if man.get("legs", 1) != 1 or man.get("entry_mode", "Market") not in ("Market", "Pullback-Limit"):
         raise SystemExit("nur legs=1 + entry_mode Market/Pullback-Limit werden unterstuetzt (kein Gestaffelt)")
     ex_map: dict = {}
@@ -339,6 +401,18 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
     if cfg.mode == "live":
         TG.send(f"Bot gestartet (LIVE): {len(cfg.symbols)} Symbole")
     cycle_no = 0
+    _known = set()
+    try:
+        from .presets import load_presets as _lp
+        for _k, _v in _lp().items():
+            if not _k.startswith("_") and isinstance(_v, dict):
+                _known.update(_v.keys())
+    except Exception:
+        pass
+    _known.update(["mode","timing","allow_long","allow_short","sizing","risk_pct","capital_pct","legs","entry_mode","entry_unit","pullback_distance","limit_life","tp_weights","fee_pct","be_r","trail_r","trail_start","tp_mode_1","tp_mode_2","tp_mode_3","tp_mode_4","bounce_on","sr_bounce_on","reentry_on","max_reentries","zone_atr","osc_mode","osc_entries","osc_reentries","osc_exit","osc_exit_after","osc_rsi_len","osc_stoch_len","osc_k_len","osc_d_len","osc_low","osc_high","div_mode","div_age","pivot_len","session_on","trade_session","session_days","session_zone","date_start","date_end","close_session","volume_len","tp_adapt_min","tp_adapt_max","profit_trail_1","profit_trail_2","profit_trail_3","profit_trail_4","profit_trail_unit","stop_pad_ticks","atr_len","regime_len","adapt_min","adapt_max"])
+    _unknown = sorted(set((cfg.manual or {}).keys()) - _known)
+    if _unknown:
+        log.error("unbekannte manual-keys (Tippfehler?) werden ignoriert", extra={"keys": _unknown})
     tf_min = {s.symbol: TF_MINUTES.get(s.timeframe, 60) for s in cfg.symbols}
     trend_state: dict[str, dict] = {}
     while True:
@@ -477,8 +551,24 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                 _is_pullback = man.get("entry_mode", "Market") == "Pullback-Limit"
                 if _is_pullback:
                     anchor = pullback_anchor(price, want, sig["atr"], man)
-                stop = round_price(ex, s.symbol, entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"])) if cfg.mode == "live" else entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"])
+                _tick = X.price_tick(ex, s.symbol)
+                if preset.get("basis", "Bollinger") == "Bollinger":
+                    _rev = sig["bb_dn"] if want == "long" else sig["bb_up"]
+                else:
+                    _rev = sig["rng_lo"] if want == "long" else sig["rng_up"]
+                _ref = {"trend_line": sig["trend_line"], "support": sig["support"],
+                        "resistance": sig["resistance"], "reverse": _rev, "tick": _tick,
+                        "pad_ticks": man.get("stop_pad_ticks", 1)}
+                try:
+                    _stop_raw = entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"], _ref)
+                except ValueError as e:
+                    log.error("stop setup blocked", extra={"symbol": s.symbol, "error": str(e)})
+                    continue
+                stop = round_price(ex, s.symbol, _stop_raw) if cfg.mode == "live" else _stop_raw
                 if want == "long" and anchor <= stop or want == "short" and anchor >= stop:
+                    continue
+                if _tick and abs(anchor - stop) < _tick:
+                    log.error("stop under one tick, blocked", extra={"symbol": s.symbol})
                     continue
                 qtys, _, _, err = plan_qty(equity, anchor, 1.0,
                                            (cfg.manual or {}).get("sizing", "Stoprisiko"),

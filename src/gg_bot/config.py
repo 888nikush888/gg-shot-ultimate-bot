@@ -15,8 +15,8 @@ class SymbolCfg(BaseModel):
     @field_validator("leverage")
     @classmethod
     def _lev(cls, v):
-        if not 1 <= v <= 50:
-            raise ValueError("leverage muss 1-50 sein")
+        if not 1 <= v <= 125:
+            raise ValueError("leverage muss 1-125 sein")
         return v
     order_mode: Literal["bot_managed", "exchange_native"] = "bot_managed"
     enabled: bool = True
@@ -71,7 +71,3 @@ def save_config(cfg: AppCfg, path: str | Path) -> Path:
     load_config(p)  # re-validate; raises on bad write
     return backup
 
-
-def redacted_dict(cfg: AppCfg) -> dict[str, Any]:
-    d = cfg.model_dump()
-    return d

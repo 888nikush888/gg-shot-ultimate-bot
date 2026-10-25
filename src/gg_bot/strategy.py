@@ -128,6 +128,11 @@ def session_allows(now_utc, manual: dict) -> bool:
     """Pine session filter: days (1=Sunday) + HHMM-HHMM range, 0000-0000 = all day."""
     if not manual.get("session_on", False):
         return True
+    try:
+        import zoneinfo
+        now_utc = now_utc.astimezone(zoneinfo.ZoneInfo(str(manual.get("session_zone", "Etc/UTC"))))
+    except Exception:
+        pass
     days = manual.get("session_days", [1, 2, 3, 4, 5, 6, 7])
     if now_utc.isoweekday() % 7 + 1 not in days:
         return False

@@ -32,6 +32,8 @@ manual:
   fee_pct: 0.05
   be_r: 1.0                # Break-even ab R (wenn be_mode=R)
   trail_r: 1.0             # Trailing ab R (wenn trailStart=R; Start ist sonst TP1)
+  trail_start: TP1          # Sofort | TP1-4 | R
+  stop_pad_ticks: 1        # Puffer in Ticks fuer Trendlinien-/S-R-Stops
   tp_mode_1: Fest           # fixiert: nur Fest (ATR-adaptiv/Gewinn-Trailing -> Fail-fast)
   tp_mode_2: Fest
   tp_mode_3: Fest

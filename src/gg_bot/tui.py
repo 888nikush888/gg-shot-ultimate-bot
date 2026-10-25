@@ -6,12 +6,28 @@ import os
 
 SALT = "gg-shot-ultimate-v6"
 
-def hash_password(pw: str) -> str:
+def hash_password(pw: str, salt_hex: str | None = None) -> str:
+    """PBKDF2-Hash im Format pbkdf2$<salt>$<hash> (200k Runden, stdlib only)."""
+    import secrets
+    salt = bytes.fromhex(salt_hex) if salt_hex else secrets.token_bytes(16)
+    dk = hashlib.pbkdf2_hmac("sha256", pw.encode(), SALT.encode() + salt, 200_000)
+    return "pbkdf2$" + salt.hex() + "$" + dk.hex()
+
+def _legacy_hash(pw: str) -> str:
     return hashlib.sha256((SALT + ":" + pw).encode()).hexdigest()
 
 def verify_password(pw: str) -> bool:
     want = os.getenv("DASHBOARD_PASSWORD_HASH", "")
-    return bool(want) and hash_password(pw) == want
+    if not want or not pw:
+        return False
+    if want.startswith("pbkdf2$"):
+        try:
+            _, salt_hex, expect = want.split("$")
+        except ValueError:
+            return False
+        return len(expect) == 64 and hash_password(pw, salt_hex) == want
+    # Legacy: reiner SHA256-Hex (altes Format, weiter gueltig)
+    return len(want) == 64 and _legacy_hash(pw) == want
 
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical

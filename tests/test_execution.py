@@ -3,7 +3,7 @@ from gg_bot import strategy as S
 from gg_bot import indicators as I
 from gg_bot.engine import (settle_currency, build_cycle, monitor, get_equity,
                            tranche_pnl, DEFAULT_TP_WEIGHTS)
-from gg_bot.sizing import split_tp_qty
+from gg_bot.engine import build_cycle
 from gg_bot import exchanges as X
 from gg_bot import orders as O
 
@@ -12,9 +12,16 @@ def test_settle_currency():
     assert settle_currency("BTC/USDT:USDT") == "USDT"
     assert settle_currency("ETH/USDT") == "USDT"
 
-def test_split_tp_qty_sums():
-    out = split_tp_qty(1.0, [30, 25, 15, 10], 4, 0.001)
-    assert abs(sum(out) - 1.0) < 1e-9 and len(out) == 4
+def test_build_cycle_splits_by_weight():
+    from gg_bot import strategy as S
+    c = build_cycle(7, "long", 1.0, 100.0, 97.0,
+                    {"tp_count": 4, "tp_basis": "Prozent", "tp1": 2.0, "tp2": 4.0, "tp3": 6.0, "tp4": 12.0,
+                     "be_mode": "Aus", "be_buffer": 0.0, "trail_mode": "Aus", "trail_atr": 3.0, "trail_pct": 1.0,
+                     "opposite_mode": "Ignorieren"},
+                    {"tp_weights": [30, 25, 15, 10], "fee_pct": 0.05}, 1.0)
+    qs = [t["qty"] for t in c["tps"]]
+    assert abs(sum(qs) - 1.0) < 1e-9 and len(qs) == 4
+    assert abs(qs[0] - 0.375) < 1e-9 and abs(qs[1] - 0.3125) < 1e-9
 
 def test_adaptive_smooth_differs_from_sharp():
     import numpy as np
