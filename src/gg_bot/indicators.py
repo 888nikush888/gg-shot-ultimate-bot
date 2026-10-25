@@ -62,23 +62,23 @@ def crossunder(a: pd.Series, b: pd.Series) -> pd.Series:
 
 
 def pivotlow(low: pd.Series, k: int) -> pd.Series:
-    out = pd.Series(np.nan, index=low.index)
+    vals = np.full(len(low), np.nan)
     for i in range(k * 2 + 1, len(low)):
         w = low.iloc[i - k * 2 - 1 : i + 1]
         center = len(w) - 1 - k
         if w.iloc[center] == w.min() and (w == w.iloc[center]).sum() == 1:
-            out.iloc[i] = w.iloc[center]
-    return out
+            vals[i] = w.iloc[center]
+    return pd.Series(vals, index=low.index)
 
 
 def pivothigh(h: pd.Series, k: int) -> pd.Series:
-    out = pd.Series(np.nan, index=h.index)
+    vals = np.full(len(h), np.nan)
     for i in range(k * 2 + 1, len(h)):
         w = h.iloc[i - k * 2 - 1 : i + 1]
         center = len(w) - 1 - k
         if w.iloc[center] == w.max() and (w == w.iloc[center]).sum() == 1:
-            out.iloc[i] = w.iloc[center]
-    return out
+            vals[i] = w.iloc[center]
+    return pd.Series(vals, index=h.index)
 
 
 def _is_na(x: float) -> bool:

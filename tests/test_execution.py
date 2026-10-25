@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 from gg_bot import strategy as S
 from gg_bot import indicators as I
 from gg_bot.engine import settle_currency, build_cycle, monitor, get_equity
@@ -207,7 +208,7 @@ def test_close_all_sides():
 def test_preset_count_is_78():
     import json
 
-    db = json.load(open("config/presets.json", encoding="utf-8"))
+    db = json.loads(Path("config/presets.json").read_text(encoding="utf-8"))
     keys = [k for k in db if not k.startswith("_")]
     assert len(keys) == 78
     assert db["_finetune_overrides"]["BTC_1h"]["volume_min"] == 1.10

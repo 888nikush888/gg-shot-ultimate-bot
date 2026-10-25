@@ -1,6 +1,7 @@
 import datetime as _dt
 import os
 import tempfile
+from pathlib import Path
 import pytest
 from gg_bot.engine import (
     entry_prices,
@@ -165,9 +166,9 @@ def test_audit_retention():
 def test_save_config_roundtrip():
 
     d = tempfile.mkdtemp()
-    src = open("config/config.example.yaml", encoding="utf-8").read()
+    src = Path("config/config.example.yaml").read_text(encoding="utf-8")
     p = os.path.join(d, "config.yaml")
-    open(p, "w", encoding="utf-8").write(src)
+    Path(p).write_text(src, encoding="utf-8")
     cfg = load_config(p)
     cfg.poll_seconds = 21
     from gg_bot.config import save_config as _sc

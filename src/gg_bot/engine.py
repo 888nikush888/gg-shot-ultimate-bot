@@ -256,7 +256,7 @@ def closed_frame(df: pd.DataFrame) -> pd.DataFrame:
 def fetch_frame(ex, symbol: str, tf: str, limit: int = 600) -> pd.DataFrame:
     ohlcv = ex.fetch_ohlcv(symbol, tf, limit=limit)
     df = pd.DataFrame(ohlcv, columns=["ts", "open", "high", "low", "close", "volume"])
-    df["ts"] = pd.to_datetime(df["ts"], unit="ms", utc=True)
+    df.loc[:, "ts"] = pd.to_datetime(df["ts"], unit="ms", utc=True)
     return df
 
 

@@ -1,4 +1,5 @@
 import inspect
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from gg_bot.orders import stop_market_type
@@ -54,7 +55,7 @@ def test_close_all_flag_is_real_option():
 
 
 def test_env_example_has_binance_keys():
-    txt = open(".env.example", encoding="utf-8").read()
+    txt = Path(".env.example").read_text(encoding="utf-8")
     assert "BINANCE_API_KEY=" in txt and "BINANCE_API_SECRET=" in txt
 
 
@@ -117,13 +118,16 @@ def test_save_open_only_on_change():
     from gg_bot.state import connect, load_open
 
     db = connect(":memory:")
-    cache: dict = {}
-    cyc = {"cycle": 1, "side": "long"}
-    assert save_open_if_changed(db, "ex", "S", cyc, cache) is True
-    assert save_open_if_changed(db, "ex", "S", cyc, cache) is False
-    assert load_open(db, "ex", "S") == cyc
-    cyc2 = {"cycle": 2, "side": "long"}
-    assert save_open_if_changed(db, "ex", "S", cyc2, cache) is True
+    try:
+        cache: dict = {}
+        cyc = {"cycle": 1, "side": "long"}
+        assert save_open_if_changed(db, "ex", "S", cyc, cache) is True
+        assert save_open_if_changed(db, "ex", "S", cyc, cache) is False
+        assert load_open(db, "ex", "S") == cyc
+        cyc2 = {"cycle": 2, "side": "long"}
+        assert save_open_if_changed(db, "ex", "S", cyc2, cache) is True
+    finally:
+        db.close()
 
 
 def test_leverage_range_rejected():
