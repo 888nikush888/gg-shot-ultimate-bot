@@ -96,7 +96,7 @@ jobs:
           hadolint-version: v2.12.0
       - uses: docker/setup-buildx-action@v3
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           tags: gg-shot:test
