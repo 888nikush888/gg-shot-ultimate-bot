@@ -432,7 +432,7 @@ charset-normalizer==3.4.7 \
     # via
     #   ccxt
     #   requests
-coincurve==21.0.0 ; python_full_version < '3.14' and implementation_name == 'cpython' and platform_machine != 'x86' and platform_machine in 'x86_64 AMD64 aarch64 arm64 ARM64 i686' \
+coincurve==21.0.0 \
     --hash=sha256:05d7e255a697b3475d7ae7640d3bdef3d5bc98ce9ce08dd387f780696606c33b \
     --hash=sha256:070e060d0d57b496e68e48b39d5e3245681376d122827cb8e09f33669ff8cf1b \
     --hash=sha256:07cda058d9394bea30d57a92fdc18ee3ca6b5bc8ef776a479a2ffec917105836 \
@@ -485,12 +485,6 @@ coincurve==21.0.0 ; python_full_version < '3.14' and implementation_name == 'cpy
     --hash=sha256:f60ad56113f08e8c540bb89f4f35f44d434311433195ffff22893ccfa335070c \
     --hash=sha256:f920af756a98edd738c0cfa431e81e3109aeec6ffd6dffb5ed4f5b5a37aacba8
     # via ccxt
-colorama==0.4.6 ; sys_platform == 'win32' \
-    --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
-    --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
-    # via
-    #   pytest
-    #   typer
 cryptography==50.0.2 \
     --hash=sha256:0ddc924c04591c2811ca024d62ecad4f7f6f08af8939c211438f48a16bd23602 \
     --hash=sha256:0ec5f09541743261e66e291b4a0cbf0fb2997aeaab6d9e9c740b9dba1b58d1c2 \
@@ -716,7 +710,7 @@ linkify-it-py==2.2.0 \
     --hash=sha256:3adc40eb5af300b2605fcfdb968c24e1d780a90f1f2221af7c15e5111e94d443 \
     --hash=sha256:907acd2d17ac1fbb9ddb62c8957ccbd6158cac602231a15c3b0cd1e215f03cee
     # via markdown-it-py
-markdown-it-py==4.2.0 \
+markdown-it-py[linkify]==4.2.0 \
     --hash=sha256:04a21681d6fbb623de53f6f364d352309d4094dd4194040a10fd51833e418d49 \
     --hash=sha256:9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a
     # via
@@ -977,7 +971,7 @@ numpy==2.5.4 \
     # via
     #   -r requirements.in
     #   pandas
-orjson==3.13.0 ; python_full_version < '3.15' and implementation_name == 'cpython' and platform_machine in 'x86_64 AMD64 aarch64 arm64 armv7l i686 ppc64le s390x' \
+orjson==3.13.0 \
     --hash=sha256:0526a3456db67b264c6d661b5f090077f326b6cd074d0ef53a72763595dec5d7 \
     --hash=sha256:08bf722f923d2100bc5e5a5dcf72c656db557049c1bea26582fdd5dd9d5395a1 \
     --hash=sha256:1807c2fa49d393c7ee95fd1ef1b39cbb24aa3ccd81f30b84503ba59407666960 \
@@ -1382,9 +1376,9 @@ pygments==2.21.0 \
     #   pytest
     #   rich
     #   textual
-pytest==9.0.3 \
-    --hash=sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9 \
-    --hash=sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c
+pytest==9.1.1 \
+    --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
+    --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
     # via -r requirements.in
 python-dateutil==3.0.0 \
     --hash=sha256:3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd \
@@ -1529,7 +1523,7 @@ urllib3==2.8.0 \
     # via
     #   ccxt
     #   requests
-uvloop==0.22.1 ; implementation_name == 'cpython' and sys_platform != 'win32' \
+uvloop==0.22.1 \
     --hash=sha256:017bd46f9e7b78e81606329d07141d3da446f8798c6baeec124260e22c262772 \
     --hash=sha256:0530a5fbad9c9e4ee3f2b33b148c6a64d47bbad8000ea63704fa8260f4cf728e \
     --hash=sha256:05e4b5f86e621cf3927631789999e697e58f0d2d32675b67d9ca9eb0bca55743 \
@@ -1579,24 +1573,6 @@ uvloop==0.22.1 ; implementation_name == 'cpython' and sys_platform != 'win32' \
     --hash=sha256:ea721dd3203b809039fcc2983f14608dae82b212288b346e0bfe46ec2fab0b7c \
     --hash=sha256:ef6f0d4cc8a9fa1f6a910230cd53545d9a14479311e87e3cb225495952eb672c \
     --hash=sha256:fe94b4564e865d968414598eea1a6de60adba0c040ba4ed05ac1300de402cd42
-    # via ccxt
-winloop==0.6.3 ; python_full_version < '3.15' and implementation_name == 'cpython' and platform_machine in 'AMD64 ARM64' and sys_platform == 'win32' \
-    --hash=sha256:17332c0348f3274fb0e3e5acead90c9aaa1e1d5f699703475974c51116a7d99b \
-    --hash=sha256:1e4460ac1b067d868759d84c821dfee2deab8615d2a6db1731400f46e14aed69 \
-    --hash=sha256:1ea7b90487f720eccf984dc65b793550bc86fcdc7c2f9b9f4fbfeac23f2b8dd0 \
-    --hash=sha256:23f8888c193ff4667d223e7664c3d74246bb8132b3b0c17d758828ef5102effb \
-    --hash=sha256:2d57782d2191c5e83475f58fb6423af9fb4bf3823fb05771e9a3caa5bb870e0d \
-    --hash=sha256:33d2d275b7eca468958478555076e2e2814f5d7f94feffdc27b4e6409c645094 \
-    --hash=sha256:393289e579d4aa36db1521e27bfa5680b2bf995a4c4cd915df3e34abca736e2d \
-    --hash=sha256:42e3fee166cdd53410122f29fa1df1c6844f2a4327d8357edfb6bb24ceb65b27 \
-    --hash=sha256:447006f38f13827ff4600e7beeda70367370cb8dab8ea84042e8fa1749f32b1c \
-    --hash=sha256:44fcb07bc204d69dd27deb83e61a800897da52b364e6d7b5c74457651beb60e3 \
-    --hash=sha256:52d2961d16d38cc6313a122567e387522092c452a78c8d0354801f31b1565ec1 \
-    --hash=sha256:723e65d134cbef1fd494e0197faa7036373509425357697c92dac225063d7327 \
-    --hash=sha256:83c0ae348f66e162a79fdff5b681835d55383a3ac7fc9fdbce6681d5914f6a51 \
-    --hash=sha256:d8fe1fce02c390836248f97403666d3b2e20c661820535e9b60330a60e86ffe6 \
-    --hash=sha256:e04cc1bf248919444afa5aefe04328c2064a89a6d98fe3c0fcb9e65323068126 \
-    --hash=sha256:f102c30e2e7d140b1b21ebf293f0b27f0834142eea6cb704ff7e54620cbe718e
     # via ccxt
 yarl==1.25.1 \
     --hash=sha256:0136d640dfa9b0523853e411430a99f8a91eca85774c6420285a33b755bc6de3 \
