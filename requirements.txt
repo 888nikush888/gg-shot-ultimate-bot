@@ -1,6 +1,6 @@
 ccxt==4.4.87
 pyyaml==6.0.2
-pydantic==2.10.6
+pydantic==2.14.1
 pydantic-settings==2.7.0
 typer==0.27.3
 structlog==24.4.0
