@@ -1,4 +1,3 @@
-import datetime
 import numpy as np
 import pandas as pd
 from gg_bot import strategy as S
@@ -97,7 +96,6 @@ def test_manuell_defaults_and_aliases():
     assert m["nonsense"] == 1
 
 def test_div_supres_detects():
-    n = 40
     df = pd.DataFrame({
         "rsi": [30.0] * 20 + [40.0] * 20,
         "piv_low": [np.nan] * 40,

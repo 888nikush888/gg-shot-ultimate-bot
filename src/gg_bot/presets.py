@@ -52,4 +52,4 @@ def get_preset(asset: str, timeframe: str, fine_tune: bool = False, path=None) -
 
 def list_presets(path=None) -> list[str]:
     db = load_presets(path)
-    return sorted(k for k in db.keys() if not k.startswith("_"))
+    return sorted(k for k in db if not k.startswith("_"))

@@ -1,9 +1,7 @@
 import pandas as pd
 from gg_bot import strategy as S
 from gg_bot import indicators as I
-from gg_bot.engine import (settle_currency, build_cycle, monitor, get_equity,
-                           tranche_pnl, DEFAULT_TP_WEIGHTS)
-from gg_bot.engine import build_cycle
+from gg_bot.engine import (settle_currency, build_cycle, monitor, get_equity)
 from gg_bot import exchanges as X
 from gg_bot import orders as O
 
@@ -13,7 +11,6 @@ def test_settle_currency():
     assert settle_currency("ETH/USDT") == "USDT"
 
 def test_build_cycle_splits_by_weight():
-    from gg_bot import strategy as S
     c = build_cycle(7, "long", 1.0, 100.0, 97.0,
                     {"tp_count": 4, "tp_basis": "Prozent", "tp1": 2.0, "tp2": 4.0, "tp3": 6.0, "tp4": 12.0,
                      "be_mode": "Aus", "be_buffer": 0.0, "trail_mode": "Aus", "trail_atr": 3.0, "trail_pct": 1.0,
@@ -31,7 +28,6 @@ def test_adaptive_smooth_differs_from_sharp():
     ad = I.adaptive_series(px, reg, 3)
     assert ad.iloc[-1] == ad.iloc[-1]  # not NaN at end
     assert abs(ad.iloc[-1] - px.iloc[-1]) > 1e-9  # smoothed lags raw
-    f = S.trend_signals.__wrapped__ if hasattr(S.trend_signals, "__wrapped__") else None
     assert S._refs("Smooth", 1.0, 2.0, 1.1, 2.1, 1.5, 2.5) == (1.5, 2.5)
     assert S._refs("Sharp", 1.0, 2.0, 1.1, 2.1, 1.5, 2.5) == (1.0, 2.0)
     assert S._refs("Balanced", 1.0, 2.0, 1.1, 2.1, 1.5, 2.5) == (1.1, 2.1)

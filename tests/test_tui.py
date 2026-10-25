@@ -40,7 +40,7 @@ def _run(coro_factory=None):
         try:
             app = DashboardApp(p)
             async with app.run_test() as pilot:
-                from textual.widgets import TabbedContent, TabPane
+                from textual.widgets import TabbedContent
                 tabs = app.query_one("#tabs", TabbedContent)
                 assert len(app.query("TabPane")) == 6
                 tabs.active = "tab-positions"

@@ -1,4 +1,5 @@
-import json, pathlib
+import json
+import pathlib
 def load():
     return json.loads(pathlib.Path("config/presets.json").read_text(encoding="utf-8"))
 

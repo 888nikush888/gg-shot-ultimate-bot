@@ -2,7 +2,8 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal
-import os, yaml
+import os
+import yaml
 from pydantic import BaseModel, Field, field_validator
 
 class SymbolCfg(BaseModel):

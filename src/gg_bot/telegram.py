@@ -4,7 +4,8 @@ import os
 import httpx
 
 def send(text: str) -> bool:
-    token = os.getenv("TELEGRAM_BOT_TOKEN", ""); chat = os.getenv("TELEGRAM_CHAT_ID", "")
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    chat = os.getenv("TELEGRAM_CHAT_ID", "")
     if not token or not chat:
         return False
     try:

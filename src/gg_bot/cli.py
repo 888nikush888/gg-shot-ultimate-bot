@@ -1,6 +1,6 @@
 """Full CLI control: run/status/config/presets/backtest/mode/positions/kill/telegram."""
 from __future__ import annotations
-import json, sys
+import json
 from pathlib import Path
 import typer
 from .logging_setup import setup_logging, get_logger
@@ -32,7 +32,7 @@ def healthcheck(config: str = typer.Option("/app/config/config.yaml", "--config"
         typer.echo(json.dumps({"ok": True, "mode": cfg.mode, "symbols": len(cfg.symbols)}))
     except Exception as e:
         typer.echo(json.dumps({"ok": False, "error": str(e)}))
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 @app.command()
 def status(config: str = typer.Option("/app/config/config.yaml", "--config")):
@@ -60,7 +60,9 @@ def config_validate(config: str = typer.Option("/app/config/config.yaml", "--con
             if s.enabled:
                 ex = X.build(s.exchange, need_auth=False)
                 ex.load_markets()
-                assert s.symbol in ex.symbols, f"{s.exchange} has no market {s.symbol}"
+                if s.symbol not in ex.symbols:
+                    typer.echo(json.dumps({"ok": False, "error": f"{s.exchange} has no market {s.symbol}"}))
+                    raise typer.Exit(1)
     typer.echo(f"OK: mode={cfg.mode} symbols={len(cfg.symbols)}")
 
 @app.command("config-show")
@@ -124,7 +126,8 @@ def kill_engage(config: str = typer.Option("/app/config/config.yaml", "--config"
     db = connect(cfg.state_path)
     import datetime
     db.execute("INSERT INTO kills VALUES (?,?)", (datetime.datetime.now(datetime.timezone.utc).isoformat(), reason))
-    db.commit(); audit(db, "cli", "kill-engage", reason)
+    db.commit()
+    audit(db, "cli", "kill-engage", reason)
     from .state import engage_kill_flag
     engage_kill_flag(cfg.state_path, reason)
     from . import telegram as TG
@@ -159,7 +162,7 @@ def dashboard(config: str = typer.Option("/app/config/config.yaml", "--config"))
     """Open the interactive terminal dashboard (password gate via DASHBOARD_PASSWORD_HASH)."""
     import getpass
     from .tui import DashboardApp, verify_password
-    for attempt in range(3):
+    for _attempt in range(3):
         if verify_password(getpass.getpass("dashboard password: ")):
             break
     else:

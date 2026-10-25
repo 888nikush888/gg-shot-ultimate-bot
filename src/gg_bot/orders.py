@@ -1,5 +1,6 @@
 """Order execution: entries, full TP/SL brackets, position close. Idempotent client IDs."""
 from __future__ import annotations
+from contextlib import suppress
 def client_id(cycle: int, leg: int, tranche: int) -> str:
     return f"gg{cycle}L{leg}T{tranche}"
 
@@ -33,11 +34,9 @@ def cancel_open(ex, symbol: str) -> int:
         return 0
     n = 0
     for o in orders:
-        try:
+        with suppress(Exception):
             ex.cancel_order(o["id"], symbol)
             n += 1
-        except Exception:
-            pass
     return n
 
 
@@ -61,11 +60,9 @@ def close_all(ex, symbol: str) -> dict:
         if amt <= 0:
             continue
         side = p.get("side") or ("long" if float(p.get("contracts") or 0) > 0 else "short")
-        try:
+        with suppress(Exception):
             ex.create_order(symbol, "market", "sell" if side == "long" else "buy",
                             amt, None, {"reduceOnly": True})
             closed += 1
             qtys.append(amt)
-        except Exception:
-            continue
     return {"closed": closed, "qty": qtys}

@@ -18,9 +18,9 @@ def highest(s: pd.Series, n: int) -> pd.Series:
 def lowest(s: pd.Series, n: int) -> pd.Series:
     return s.shift(1).rolling(n, min_periods=n).min()
 
-def atr(h: pd.Series, l: pd.Series, c: pd.Series, n: int) -> pd.Series:
-    pc = c.shift(1)
-    tr = pd.concat([(h - l), (h - pc).abs(), (l - pc).abs()], axis=1).max(axis=1)
+def atr(high: pd.Series, low: pd.Series, close: pd.Series, n: int) -> pd.Series:
+    pc = close.shift(1)
+    tr = pd.concat([(high - low), (high - pc).abs(), (low - pc).abs()], axis=1).max(axis=1)
     return tr.ewm(alpha=1 / n, adjust=False, min_periods=n).mean()
 
 def rsi_floor(c: pd.Series, n: int) -> pd.Series:
@@ -46,10 +46,10 @@ def crossover(a: pd.Series, b: pd.Series) -> pd.Series:
 def crossunder(a: pd.Series, b: pd.Series) -> pd.Series:
     return (a.shift(1) >= b.shift(1)) & (a < b)
 
-def pivotlow(l: pd.Series, k: int) -> pd.Series:
-    out = pd.Series(np.nan, index=l.index)
-    for i in range(k * 2 + 1, len(l)):
-        w = l.iloc[i - k * 2 - 1:i + 1]
+def pivotlow(low: pd.Series, k: int) -> pd.Series:
+    out = pd.Series(np.nan, index=low.index)
+    for i in range(k * 2 + 1, len(low)):
+        w = low.iloc[i - k * 2 - 1:i + 1]
         center = len(w) - 1 - k
         if w.iloc[center] == w.min() and (w == w.iloc[center]).sum() == 1:
             out.iloc[i] = w.iloc[center]
@@ -64,6 +64,11 @@ def pivothigh(h: pd.Series, k: int) -> pd.Series:
             out.iloc[i] = w.iloc[center]
     return out
 
+def _is_na(x: float) -> bool:
+    """Pine na(): True nur fuer NaN (x != x gilt nur fuer NaN)."""
+    return x != x  # noqa: PLR0124
+
+
 def adaptive_series(s: pd.Series, regime: pd.Series, smooth: int) -> pd.Series:
     """Pine Smooth style: adaptiveLow/High = prev + alpha*(x-prev), alpha=clamp(2/(n+1)*regime, .01, 1)."""
     n = len(s)
@@ -72,11 +77,11 @@ def adaptive_series(s: pd.Series, regime: pd.Series, smooth: int) -> pd.Series:
     base = 2.0 / (smooth + 1)
     sv, rv = s.to_numpy(dtype=float), regime.to_numpy(dtype=float)
     for i in range(n):
-        x, r = sv[i], (rv[i] if rv[i] == rv[i] else 1.0)
-        if x != x:
+        x, r = sv[i], (rv[i] if not _is_na(rv[i]) else 1.0)
+        if _is_na(x):
             out[i] = prev
             continue
         alpha = min(1.0, max(0.01, base * r))
-        prev = x if prev != prev else prev + alpha * (x - prev)
+        prev = x if _is_na(prev) else prev + alpha * (x - prev)
         out[i] = prev
     return pd.Series(out, index=s.index)

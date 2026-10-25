@@ -1,9 +1,8 @@
 import datetime as _dt
 import pytest
 from gg_bot.engine import entry_prices, validate_manual, unknown_manual_keys, monitor, build_cycle
-from gg_bot.tui import hash_password, verify_password
 from gg_bot.state import connect
-from gg_bot.config import load_config, save_config
+from gg_bot.config import load_config
 import os
 
 def _cyc(**kw):
@@ -87,7 +86,8 @@ def test_session_zone_day_boundary():
     assert session_allows(now, {"session_on": True, "trade_session": "0000-0100", "session_zone": "Pacific/Kiritimati"}) is False
 
 def test_audit_retention(tmp_path_factory=None):
-    import tempfile, os as _os
+    import tempfile
+    import os as _os
     d = tempfile.mkdtemp()
     p = _os.path.join(d, "t.db")
     c = connect(p, audit_keep=2)
@@ -100,7 +100,8 @@ def test_audit_retention(tmp_path_factory=None):
     c2.close()
 
 def test_save_config_roundtrip():
-    import tempfile, os as _os, yaml
+    import tempfile
+    import os as _os
     d = tempfile.mkdtemp()
     src = open("config/config.example.yaml", encoding="utf-8").read()
     p = _os.path.join(d, "config.yaml")

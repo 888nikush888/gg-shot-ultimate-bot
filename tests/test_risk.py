@@ -7,4 +7,5 @@ def test_daily_loss_kill():
 
 def test_reset():
     r = RiskState(killed=True, kill_reason="x")
-    r.reset(); assert not r.killed
+    r.reset()
+    assert not r.killed

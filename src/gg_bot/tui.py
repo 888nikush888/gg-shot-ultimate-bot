@@ -3,6 +3,15 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import os
+from contextlib import suppress
+
+from textual.app import App, ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.screen import ModalScreen
+from textual.widgets import (
+    Button, Checkbox, DataTable, Footer, Header, Input, Label, Select, Static,
+    TabbedContent, TabPane,
+)
 
 SALT = "gg-shot-ultimate-v6"
 
@@ -29,13 +38,6 @@ def verify_password(pw: str) -> bool:
     # Legacy: reiner SHA256-Hex (altes Format, weiter gueltig)
     return len(want) == 64 and _legacy_hash(pw) == want
 
-from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical
-from textual.screen import ModalScreen
-from textual.widgets import (
-    Button, Checkbox, DataTable, Footer, Header, Input, Label, Select, Static,
-    TabbedContent, TabPane,
-)
 
 CSS = """
 #confirm-box { align: center middle; width: 60; height: auto; border: solid red; padding: 1 2; }
@@ -261,10 +263,8 @@ class DashboardApp(App):
         save_config(self.cfg, self._config_path)
         os.environ["BOT_MODE"] = self.cfg.mode
         self.reload_config()
-        try:
+        with suppress(Exception):
             self.notify(note)
-        except Exception:
-            pass
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         bid = event.button.id
@@ -404,10 +404,8 @@ class DashboardApp(App):
             if not s.enabled:
                 continue
             if self.cfg.mode == "live":
-                try:
+                with suppress(Exception):
                     close_all(_ex(s.exchange, True), s.symbol)
-                except Exception:
-                    pass
             from .state import connect, load_open
             db = connect(self.cfg.state_path)
             try:

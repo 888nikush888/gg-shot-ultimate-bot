@@ -1,9 +1,7 @@
 import unittest
-import pandas as pd
-import numpy as np
 from datetime import datetime, timezone
 from gg_bot import strategy as S
-from gg_bot.engine import monitor, build_cycle, meets_min_notional, should_resize_native_stop
+from gg_bot.engine import monitor, build_cycle, meets_min_notional
 
 class BotEdgeCaseStressTest(unittest.TestCase):
     def setUp(self):
