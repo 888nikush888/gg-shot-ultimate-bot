@@ -8,6 +8,8 @@ from .logging_setup import setup_logging, get_logger
 from .config import load_config
 
 app = typer.Typer(add_completion=False, help="GG-Shot Ultimate v6 bot")
+
+DEFAULT_CONFIG = "/app/config/config.yaml"
 log = get_logger("cli")
 
 
@@ -18,7 +20,7 @@ def _cb(verbose: bool = typer.Option(False, "--verbose")):
 
 @app.command()
 def run(
-    config: str = typer.Option("/app/config/config.yaml", "--config"),
+    config: str = typer.Option(DEFAULT_CONFIG, "--config"),
     once: bool = typer.Option(False, "--once"),
 ):
     """Start the engine (paper or live per config/BOT_MODE)."""
@@ -33,7 +35,7 @@ def run(
 
 
 @app.command()
-def healthcheck(config: str = typer.Option("/app/config/config.yaml", "--config")):
+def healthcheck(config: str = typer.Option(DEFAULT_CONFIG, "--config")):
     """Docker HEALTHCHECK: config loads + presets parse."""
     try:
         cfg = load_config(config)
@@ -49,7 +51,7 @@ def healthcheck(config: str = typer.Option("/app/config/config.yaml", "--config"
 
 
 @app.command()
-def status(config: str = typer.Option("/app/config/config.yaml", "--config")):
+def status(config: str = typer.Option(DEFAULT_CONFIG, "--config")):
     cfg = load_config(config)
     import sqlite3
 
@@ -75,7 +77,7 @@ def status(config: str = typer.Option("/app/config/config.yaml", "--config")):
 
 @app.command("config-validate")
 def config_validate(
-    config: str = typer.Option("/app/config/config.yaml", "--config"),
+    config: str = typer.Option(DEFAULT_CONFIG, "--config"),
     check_markets: bool = typer.Option(False, "--check-markets"),
 ):
     cfg = load_config(config)
@@ -104,7 +106,7 @@ def config_validate(
 
 
 @app.command("config-show")
-def config_show(config: str = typer.Option("/app/config/config.yaml", "--config")):
+def config_show(config: str = typer.Option(DEFAULT_CONFIG, "--config")):
     cfg = load_config(config)
     typer.echo(json.dumps(cfg.model_dump(), indent=2))
 
@@ -129,7 +131,7 @@ def preset_show(key: str):
 
 @app.command()
 def backtest(
-    config: str = typer.Option("/app/config/config.yaml", "--config"),
+    config: str = typer.Option(DEFAULT_CONFIG, "--config"),
     symbol: str = typer.Option("", "--symbol"),
     limit: int = typer.Option(1000, "--limit"),
 ):
@@ -153,7 +155,7 @@ def backtest(
 
 @app.command("positions-close-all")
 def positions_close_all(
-    config: str = typer.Option("/app/config/config.yaml", "--config"),
+    config: str = typer.Option(DEFAULT_CONFIG, "--config"),
     symbol: str = typer.Option("", "--symbol"),
     i_understand_live: bool = typer.Option(False, "--i-understand-live"),
 ):
@@ -176,7 +178,7 @@ def positions_close_all(
 
 @app.command("kill-engage")
 def kill_engage(
-    config: str = typer.Option("/app/config/config.yaml", "--config"),
+    config: str = typer.Option(DEFAULT_CONFIG, "--config"),
     reason: str = typer.Option("manual", "--reason"),
 ):
     from .state import connect, audit
@@ -202,7 +204,7 @@ def kill_engage(
 
 
 @app.command("kill-reset")
-def kill_reset(config: str = typer.Option("/app/config/config.yaml", "--config")):
+def kill_reset(config: str = typer.Option(DEFAULT_CONFIG, "--config")):
     """Remove kill flag so entries resume (live still needs review)."""
     from .state import connect, audit, clear_kill_flag
 
@@ -226,7 +228,7 @@ def dashboard_hash_password():
 
 
 @app.command("dashboard")
-def dashboard(config: str = typer.Option("/app/config/config.yaml", "--config")):
+def dashboard(config: str = typer.Option(DEFAULT_CONFIG, "--config")):
     """Open the interactive terminal dashboard (password gate via DASHBOARD_PASSWORD_HASH)."""
     import getpass
     from .tui import DashboardApp, verify_password

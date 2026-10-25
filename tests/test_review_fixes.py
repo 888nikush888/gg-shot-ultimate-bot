@@ -3,6 +3,7 @@ import os
 import tempfile
 from pathlib import Path
 import pytest
+from pydantic import ValidationError
 from gg_bot.engine import (
     entry_prices,
     validate_manual,
@@ -82,26 +83,24 @@ def test_validate_manual():
             validate_manual(bad)
 
 
-def test_password_pbkdf2_and_legacy():
+def test_password_pbkdf2_and_legacy(monkeypatch):
     import gg_bot.tui as tui
 
     h = tui.hash_password("geheim123")
     assert h.startswith("pbkdf2$")
-    os.environ["DASHBOARD_PASSWORD_HASH"] = h
-    try:
-        assert tui.verify_password("geheim123") is True
-        assert tui.verify_password("falsch") is False
-        assert tui.verify_password("") is False
-        import hashlib
+    monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", h)
+    assert tui.verify_password("geheim123") is True
+    assert tui.verify_password("falsch") is False
+    assert tui.verify_password("") is False
+    import hashlib
 
-        legacy = hashlib.sha256(("gg-shot-ultimate-v6:alt123").encode()).hexdigest()
-        os.environ["DASHBOARD_PASSWORD_HASH"] = legacy
-        assert tui.verify_password("alt123") is True
-        assert tui.verify_password("falsch") is False
-        os.environ["DASHBOARD_PASSWORD_HASH"] = "pbkdf2$nope"
-        assert tui.verify_password("x") is False
-    finally:
-        del os.environ["DASHBOARD_PASSWORD_HASH"]
+    legacy = hashlib.sha256(("gg-shot-ultimate-v6:alt123").encode()).hexdigest()
+    monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", legacy)
+    assert tui.verify_password("alt123") is True
+    assert tui.verify_password("falsch") is False
+    monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", "pbkdf2$nope")
+    assert tui.verify_password("x") is False
+    monkeypatch.delenv("DASHBOARD_PASSWORD_HASH")
     assert tui.verify_password("x") is False
 
 
@@ -109,7 +108,8 @@ def test_monitor_trail_start_r():
     c = _cyc(trail_start="R")
     sig = {"long": False, "short": False, "osc_short": False, "osc_long": False}
     ev = monitor(c, 106.0, 106.0, 100.0, 1.0, 105.0, sig, {"trail_r": 1.0})
-    assert ev["new_stop"] is not None and c["stop_reason"] == "TRAIL"
+    assert ev["new_stop"] is not None
+    assert c["stop_reason"] == "TRAIL"
     c2 = _cyc(trail_start="TP4")
     ev2 = monitor(c2, 106.0, 106.0, 100.0, 1.0, 105.0, sig, {"trail_r": 1.0})
     assert ev2["new_stop"] is None
@@ -174,7 +174,8 @@ def test_save_config_roundtrip():
     from gg_bot.config import save_config as _sc
 
     bak = _sc(cfg, p)
-    assert bak.exists() and load_config(p).poll_seconds == 21
+    assert bak.exists()
+    assert load_config(p).poll_seconds == 21
 
 
 def test_leverage_range():
@@ -187,5 +188,5 @@ def test_leverage_range():
         timeframe="1h",
     )
     assert SymbolCfg(**base, leverage=125).leverage == 125
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         SymbolCfg(**base, leverage=126)

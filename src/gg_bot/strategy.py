@@ -141,6 +141,12 @@ def _div_hit(bull, piv_v, prior_v, rsi_v, prior_rsi_v) -> bool:
     return piv_v > prior_v and rsi_v < prior_rsi_v
 
 
+def _div_track(piv_v, rsi_v, prior_v, prior_rsi_v, last_ev, idx, bull):
+    if _div_hit(bull, piv_v, prior_v, rsi_v, prior_rsi_v):
+        return idx, piv_v, rsi_v
+    return last_ev, piv_v, rsi_v
+
+
 def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     """Pine pivot divergences + S/R levels. Returns (bull_age, bear_age, sup, res) arrays."""
     piv = int(p.get("pivot_len", 5))
@@ -163,15 +169,15 @@ def div_supres(df: pd.DataFrame, p: dict) -> tuple:
     for i in range(n):
         if not _is_na(pl[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if _div_hit(True, pl[i], prior_pl, prsi, prior_pl_rsi):
-                last_bull = i
-            prior_pl, prior_pl_rsi = pl[i], prsi
+            last_bull, prior_pl, prior_pl_rsi = _div_track(
+                pl[i], prsi, prior_pl, prior_pl_rsi, last_bull, i, True
+            )
             cur_sup = pl[i]
         if not _is_na(ph[i]):
             prsi = rsi[i - piv] if i - piv >= 0 else np.nan
-            if _div_hit(False, ph[i], prior_ph, prsi, prior_ph_rsi):
-                last_bear = i
-            prior_ph, prior_ph_rsi = ph[i], prsi
+            last_bear, prior_ph, prior_ph_rsi = _div_track(
+                ph[i], prsi, prior_ph, prior_ph_rsi, last_bear, i, False
+            )
             cur_res = ph[i]
         bull_age[i] = i - last_bull
         bear_age[i] = i - last_bear
@@ -227,24 +233,38 @@ def pending_state(
 ) -> str:
     """Pending pullback-limit entry: filled | waiting | expired."""
     if is_live:
-        if live_qty != 0.0:
+        if live_qty:
             return "filled"
     elif touched:
         return "filled"
     return "expired" if now_ts >= deadline_ts else "waiting"
 
 
+def _trend_seed(prev_line, brk, lc, hc, c):
+    if _is_na(prev_line):
+        if brk == 1:
+            return lc
+        if brk == -1:
+            return hc
+        return c
+    return prev_line
+
+
 def _trend_line(prev_line, prev_dir, brk, lc, hc, buf, c):
     # Linien-Update je Bar: gibt (line, d, tl, ts, turned) zurueck.
-    if _is_na(prev_line):
-        prev_line = lc if brk == 1 else (hc if brk == -1 else c)
+    prev_line = _trend_seed(prev_line, brk, lc, hc, c)
     if brk == 1:
         line = max(prev_line, lc - buf)
     elif brk == -1:
         line = min(prev_line, hc + buf)
     else:
         line = prev_line
-    d = 1 if line > prev_line else (-1 if line < prev_line else prev_dir)
+    if line > prev_line:
+        d = 1
+    elif line < prev_line:
+        d = -1
+    else:
+        d = prev_dir
     tl = prev_dir == -1 and d == 1
     ts = prev_dir == 1 and d == -1
     return line, d, tl, ts, (tl or ts) and d != prev_dir
@@ -285,6 +305,20 @@ def _bounce_edge(adv, touch_l, touch_s, prev_l, prev_s, bounce_l, bounce_s):
     return touch_l, touch_s
 
 
+def _trend_thresholds(basis, bb_up, bb_dn, upper, lower):
+    if basis == "Bollinger":
+        return bb_up, bb_dn
+    return upper, lower
+
+
+def _trend_break(c, th_u, th_d):
+    if c > th_u:
+        return 1
+    if c < th_d:
+        return -1
+    return 0
+
+
 def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out = df.copy()
     basis, style = p.get("basis", "Bollinger"), p.get("style", "Sharp")
@@ -310,11 +344,16 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     prev_line, prev_dir, tnum = float("nan"), 0, 0
     prev_touch_l, prev_touch_s = False, False
     for i in range(len(out)):
-        th_u = out["bb_up"].iloc[i] if basis == "Bollinger" else out["upper"].iloc[i]
-        th_d = out["bb_dn"].iloc[i] if basis == "Bollinger" else out["lower"].iloc[i]
+        th_u, th_d = _trend_thresholds(
+            basis,
+            out["bb_up"].iloc[i],
+            out["bb_dn"].iloc[i],
+            out["upper"].iloc[i],
+            out["lower"].iloc[i],
+        )
         c, h, lo = out["close"].iloc[i], out["high"].iloc[i], out["low"].iloc[i]
         atr_v = out["atr"].iloc[i]
-        brk = 1 if c > th_u else (-1 if c < th_d else 0)
+        brk = _trend_break(c, th_u, th_d)
         lc, hc = _refs(
             style,
             lo,
@@ -375,13 +414,15 @@ def tp_distances(
     anchor: float, stop: float, atr_v: float, p: dict, tp_count: int
 ) -> list[float]:
     basis = p.get("tp_basis", "Prozent")
+    tp_count = max(1, min(4, int(tp_count)))
     outs = []
     for j in range(tp_count):
         v = float(p.get(f"tp{j + 1}", 2.0))
-        d = (
-            anchor * v / 100
-            if basis == "Prozent"
-            else (atr_v * v if basis == "ATR" else abs(anchor - stop) * v)
-        )
+        if basis == "Prozent":
+            d = anchor * v / 100
+        elif basis == "ATR":
+            d = atr_v * v
+        else:
+            d = abs(anchor - stop) * v
         outs.append(max(d, 1e-9))
     return outs

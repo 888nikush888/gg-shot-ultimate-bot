@@ -1,5 +1,4 @@
 import asyncio
-import os
 import tempfile
 from pathlib import Path
 import yaml
@@ -17,13 +16,11 @@ def _test_config():
     return d, p
 
 
-def test_password_roundtrip():
-    os.environ["DASHBOARD_PASSWORD_HASH"] = hash_password("secret123")
-    try:
-        assert verify_password("secret123") is True
-        assert verify_password("wrong") is False
-    finally:
-        del os.environ["DASHBOARD_PASSWORD_HASH"]
+def test_password_roundtrip(monkeypatch):
+    monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", hash_password("secret123"))
+    assert verify_password("secret123") is True
+    assert verify_password("wrong") is False
+    monkeypatch.delenv("DASHBOARD_PASSWORD_HASH")
     assert verify_password("secret123") is False
 
 
@@ -34,7 +31,8 @@ def test_save_config_backup_and_validate():
     try:
         cfg = load_config(p)
         bak = save_config(cfg, p)
-        assert bak.exists() and load_config(p).mode == cfg.mode
+        assert bak.exists()
+        assert load_config(p).mode == cfg.mode
     finally:
         d.cleanup()
 

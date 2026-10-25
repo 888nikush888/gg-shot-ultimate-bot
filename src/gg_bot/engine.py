@@ -492,7 +492,7 @@ def build_cycle(
     manual: dict,
     atr_v: float,
 ) -> dict:
-    tp_count = int(preset.get("tp_count", 4))
+    tp_count = max(1, min(4, int(preset.get("tp_count", 4))))
     dists = S.tp_distances(entry, stop, atr_v, preset, tp_count)
     weights = list((manual or {}).get("tp_weights", DEFAULT_TP_WEIGHTS))
     tps = []
@@ -896,7 +896,7 @@ def _warn_unmanaged(ctx, s, key, cycle, live_qty) -> None:
     if (
         not cycle
         and ctx["cfg"].mode == "live"
-        and live_qty != 0.0
+        and live_qty
         and key not in ctx["warned"]
     ):
         ctx["warned"].add(key)
@@ -914,7 +914,7 @@ def _reconcile_extern(ctx, ex, s, key, q):
     if (
         cycle
         and ctx["cfg"].mode == "live"
-        and live_qty == 0.0
+        and not live_qty
         and not cycle.get("just_opened")
     ):
         # externally closed: finalize with estimate
@@ -947,7 +947,7 @@ def _poll_pending(ctx, ex, s, q) -> bool:
 
     if q["cycle"] and q["cycle"].get("pending"):
         if ctx["cfg"].mode == "live":
-            _filled = q["live_qty"] != 0.0
+            _filled = bool(q["live_qty"])
         else:
             _a = float(q["cycle"].get("anchor", q["cycle"]["entry"]))
             _filled = (q["cycle"]["side"] == "long" and q["ex_lo"] <= _a) or (
@@ -1081,9 +1081,7 @@ def _poll_open(ctx, ex, s, key, q) -> bool:
         s.order_mode == "exchange_native"
         and ev["new_stop"]
         and ctx["cfg"].mode == "live"
-    ):
-        move_native_stop(ex, s.symbol, cycle)
-    elif (
+    ) or (
         should_resize_native_stop(s.order_mode, ctx["cfg"].mode == "live", ev["closes"])
         and not ev["closed_all"]
     ):
@@ -1098,13 +1096,18 @@ def _entry_guards(ctx, s, key, q):
         return ""
     if ctx["cfg"].mode == "live" and ctx["lev_ok"].get(s.symbol) is False:
         return ""
-    if ctx["cfg"].mode == "live" and q["live_qty"] != 0.0:
+    if ctx["cfg"].mode == "live" and q["live_qty"]:
         return ""
     if not cooldown_ok(
         ctx["risk"], key, ctx["tf_min"][s.symbol], ctx["cfg"].risk.cooldown_bars
     ):
         return ""
-    want = "long" if q["sig"]["long"] else ("short" if q["sig"]["short"] else "")
+    if q["sig"]["long"]:
+        want = "long"
+    elif q["sig"]["short"]:
+        want = "short"
+    else:
+        want = ""
     if not want:
         return ""
     if not q["sig"].get("session_ok", True):
@@ -1267,11 +1270,10 @@ def _entry_place(ctx, ex, s, key, q, plan) -> None:
         ctx["man"],
         q["sig"]["atr"],
     )
-    if ctx["cfg"].mode == "live":
-        if not _place_live_orders(
-            ctx, ex, s, cycle, want, qty, anchor, stop, _is_pullback
-        ):
-            return None
+    if ctx["cfg"].mode == "live" and not _place_live_orders(
+        ctx, ex, s, cycle, want, qty, anchor, stop, _is_pullback
+    ):
+        return None
     if _is_pullback:
         cycle["pending"] = True
         cycle["anchor"] = anchor
@@ -1317,12 +1319,10 @@ def _poll_symbol(ctx, s) -> None:
         if q is None:
             return
         q = _reconcile_extern(ctx, ex, s, key, q)
-        if q["cycle"] and q["cycle"].get("pending"):
-            if _poll_pending(ctx, ex, s, q):
-                return
-        if q["cycle"]:
-            if not _poll_open(ctx, ex, s, key, q):
-                return
+        if q["cycle"] and q["cycle"].get("pending") and _poll_pending(ctx, ex, s, q):
+            return
+        if q["cycle"] and not _poll_open(ctx, ex, s, key, q):
+            return
         _poll_entry(ctx, ex, s, key, q)
     except SystemExit:
         raise
@@ -1336,25 +1336,32 @@ def _poll_symbol(ctx, s) -> None:
             TG.send(f"FEHLER {s.exchange} {s.symbol}: {e}")
 
 
+def _poll_all(ctx) -> None:
+    for s in ctx["cfg"].symbols:
+        _poll_symbol(ctx, s)
+
+
+def _maybe_kill_sweep(ctx) -> None:
+    if ctx["risk"].killed and not getattr(run_loop, "_kill_closed", False):
+        run_loop._kill_closed = True  # type: ignore[attr-defined]
+        for s in ctx["cfg"].symbols:
+            if s.enabled and ctx["cfg"].mode == "live":
+                from .orders import close_all
+
+                with suppress(Exception):
+                    close_all(ctx["ex_map"][s.exchange], s.symbol)
+        if ctx["cfg"].telegram.enabled and ctx["cfg"].telegram.notify_kill:
+            TG.killed(ctx["risk"].kill_reason)
+
+
 def run_loop(cfg: AppCfg, once: bool = False) -> None:
     ctx = _setup_run(cfg)
     while True:
         _flag = kill_flag_reason(ctx["cfg"].state_path)
         if _flag is not None and not ctx["risk"].killed:
             ctx["risk"].engage("flag: " + _flag)
-        for s in ctx["cfg"].symbols:
-            _poll_symbol(ctx, s)
-        # auto kill-switch: close everything
-        if ctx["risk"].killed and not getattr(run_loop, "_kill_closed", False):
-            run_loop._kill_closed = True  # type: ignore[attr-defined]
-            for s in ctx["cfg"].symbols:
-                if s.enabled and ctx["cfg"].mode == "live":
-                    from .orders import close_all
-
-                    with suppress(Exception):
-                        close_all(ctx["ex_map"][s.exchange], s.symbol)
-            if ctx["cfg"].telegram.enabled and ctx["cfg"].telegram.notify_kill:
-                TG.killed(ctx["risk"].kill_reason)
+        _poll_all(ctx)
+        _maybe_kill_sweep(ctx)
         if once:
             break
         time.sleep(max(5, ctx["cfg"].poll_seconds))

@@ -17,13 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.13"
           cache: pip
       - name: Install ruff
-        run: pip install ruff==0.15.7
+        run: pip install --only-binary ":all:" "ruff==0.15.7"
       - name: Ruff check
         run: ruff check src tests
       - name: Ruff format check
@@ -46,13 +46,19 @@ jobs:
     env:
       PYTHONPATH: src
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Install deps
-        run: pip install -r requirements.txt && pip install pytest-cov
+      - name: Install deps (binary-only)
+        if: matrix.experimental == false
+        run: pip install --only-binary ":all:" -r requirements.txt
+      - name: Install deps (experimental, source builds allowed)
+        if: matrix.experimental
+        run: pip install -r requirements.txt
+      - name: Install pytest-cov
+        run: pip install --only-binary ":all:" "pytest-cov==7.1.0"
       - name: Dependency consistency
         run: pip check
       - name: Unit tests with coverage gate
@@ -73,30 +79,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.13"
           cache: pip
       - name: Bandit (no new issues)
-        run: pip install bandit && bandit -q -r src
+        run: pip install --only-binary ":all:" "bandit==1.9.4" && bandit -q -r src
       - name: pip-audit (known CVEs)
-        run: pip install pip-audit && pip-audit -r requirements.txt
+        run: pip install --only-binary ":all:" "pip-audit==2.10.1" && pip-audit -r requirements.txt
 
   docker:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Hadolint Dockerfile
-        uses: hadolint/hadolint-action@v3.5.0
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
         with:
           dockerfile: Dockerfile
           failure-threshold: error
           hadolint-version: v2.12.0
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
       - name: Build image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           tags: gg-shot:test

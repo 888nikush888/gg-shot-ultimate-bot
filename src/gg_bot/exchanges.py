@@ -5,49 +5,70 @@ from contextlib import suppress
 import os
 
 
-def build(name: str, testnet: bool = False, need_auth: bool = True):
+def _hyperliquid(testnet: bool, need_auth: bool):
     import ccxt
 
-    if name == "hyperliquid":
-        wallet = os.getenv("HYPERLIQUID_WALLET_ADDRESS", "")
-        key = os.getenv("HYPERLIQUID_PRIVATE_KEY", "")
-        params = {}
-        if wallet and key:
-            params = {"walletAddress": wallet, "privateKey": key}
-        elif need_auth:
-            raise RuntimeError(
-                "HYPERLIQUID_WALLET_ADDRESS / HYPERLIQUID_PRIVATE_KEY missing in .env"
-            )
-        ex = ccxt.hyperliquid(params)
-        _swap_only(ex)  # CCXT-Spot-Listing stuerzt ab (base=None); wir traden nur Perps
-        if testnet:
-            ex.set_sandbox_mode(True)
-        return ex
-    if name == "aster":
-        key = os.getenv("ASTER_API_KEY", "")
-        sec = os.getenv("ASTER_API_SECRET", "")
-        params: dict = {"options": {"defaultType": "swap"}}
-        if key and sec:
-            params.update({"apiKey": key, "secret": sec})
-        elif need_auth:
-            raise RuntimeError("ASTER_API_KEY / ASTER_API_SECRET missing in .env")
-        ex = ccxt.aster(params)
-        if testnet:
-            ex.set_sandbox_mode(True)
-        return ex
-    if name == "binance":
-        key = os.getenv("BINANCE_API_KEY", "")
-        sec = os.getenv("BINANCE_API_SECRET", "")
-        params = {"options": {"defaultType": "swap"}}
-        if key and sec:
-            params.update({"apiKey": key, "secret": sec})
-        elif need_auth:
-            raise RuntimeError("BINANCE_API_KEY / BINANCE_API_SECRET missing in .env")
-        ex = ccxt.binanceusdm(params)
-        if testnet:
-            ex.set_sandbox_mode(True)
-        return ex
-    raise ValueError(f"unknown exchange {name}")
+    wallet = os.getenv("HYPERLIQUID_WALLET_ADDRESS", "")
+    key = os.getenv("HYPERLIQUID_PRIVATE_KEY", "")
+    params = {}
+    if wallet and key:
+        params = {"walletAddress": wallet, "privateKey": key}
+    elif need_auth:
+        raise RuntimeError(
+            "HYPERLIQUID_WALLET_ADDRESS / HYPERLIQUID_PRIVATE_KEY missing in .env"
+        )
+    ex = ccxt.hyperliquid(params)
+    _swap_only(ex)  # CCXT-Spot-Listing stuerzt ab (base=None); wir traden nur Perps
+    if testnet:
+        ex.set_sandbox_mode(True)
+    return ex
+
+
+def _aster(testnet: bool, need_auth: bool):
+    import ccxt
+
+    key = os.getenv("ASTER_API_KEY", "")
+    sec = os.getenv("ASTER_API_SECRET", "")
+    params: dict = {"options": {"defaultType": "swap"}}
+    if key and sec:
+        params.update({"apiKey": key, "secret": sec})
+    elif need_auth:
+        raise RuntimeError("ASTER_API_KEY / ASTER_API_SECRET missing in .env")
+    ex = ccxt.aster(params)
+    if testnet:
+        ex.set_sandbox_mode(True)
+    return ex
+
+
+def _binance(testnet: bool, need_auth: bool):
+    import ccxt
+
+    key = os.getenv("BINANCE_API_KEY", "")
+    sec = os.getenv("BINANCE_API_SECRET", "")
+    params = {"options": {"defaultType": "swap"}}
+    if key and sec:
+        params.update({"apiKey": key, "secret": sec})
+    elif need_auth:
+        raise RuntimeError("BINANCE_API_KEY / BINANCE_API_SECRET missing in .env")
+    ex = ccxt.binanceusdm(params)
+    if testnet:
+        ex.set_sandbox_mode(True)
+    return ex
+
+
+_BUILDERS = {
+    "hyperliquid": _hyperliquid,
+    "aster": _aster,
+    "binance": _binance,
+}
+
+
+def build(name: str, testnet: bool = False, need_auth: bool = True):
+    try:
+        make = _BUILDERS[name]
+    except KeyError:
+        raise ValueError(f"unknown exchange {name}")
+    return make(testnet, need_auth)
 
 
 def _swap_only(ex) -> None:

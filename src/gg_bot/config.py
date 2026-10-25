@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Literal
 import os
+import tempfile
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
@@ -71,11 +72,25 @@ def load_config(path: str | Path) -> AppCfg:
     return AppCfg.model_validate(raw)
 
 
+def _resolve_inside_roots(raw: str, roots: tuple) -> Path:
+    p = Path(raw).expanduser().resolve()
+    for root in roots:
+        try:
+            p.relative_to(root.resolve())
+            return p
+        except ValueError:
+            continue
+    raise ValueError("config path must stay inside working dir or temp dir")
+
+
 def save_config(cfg: AppCfg, path: str | Path) -> Path:
     """Validate, back up, write, re-validate. Returns backup path."""
     import datetime
 
-    p = Path(path)
+    raw = os.fspath(path)
+    if "\x00" in raw:
+        raise ValueError("config path contains NUL")
+    p = _resolve_inside_roots(raw, (Path.cwd(), Path(tempfile.gettempdir())))
     backup = p.with_name(
         p.name + ".bak." + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     )
