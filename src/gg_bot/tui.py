@@ -332,7 +332,7 @@ class DashboardApp(App):
 
     # ---------- actions ----------
     async def _confirm(self, message: str) -> bool:
-        return await self.push_screen(ConfirmModal(message))
+        return bool(await self.push_screen(ConfirmModal(message)))
 
     def _save(self, note: str = "Restart engine to apply.") -> None:
         from .config import save_config
