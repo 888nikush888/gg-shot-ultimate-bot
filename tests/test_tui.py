@@ -1,19 +1,19 @@
 import asyncio
 import os
-import shutil
 import tempfile
+from pathlib import Path
 import yaml
 from gg_bot.tui import hash_password, verify_password, DashboardApp
 
 
 def _test_config():
     d = tempfile.TemporaryDirectory()
-    src = open("config/config.example.yaml", encoding="utf-8").read()
+    src = Path("config/config.example.yaml").read_text(encoding="utf-8")
     raw = yaml.safe_load(src)
     raw["state_path"] = d.name + "/state.db"
     raw["symbols"] = [raw["symbols"][0]]
     p = d.name + "/config.yaml"
-    open(p, "w", encoding="utf-8").write(yaml.safe_dump(raw))
+    Path(p).write_text(yaml.safe_dump(raw), encoding="utf-8")
     return d, p
 
 
@@ -36,7 +36,7 @@ def test_save_config_backup_and_validate():
         bak = save_config(cfg, p)
         assert bak.exists() and load_config(p).mode == cfg.mode
     finally:
-        shutil.rmtree(d.name, ignore_errors=True)
+        d.cleanup()
 
 
 def _run():
@@ -82,4 +82,4 @@ def test_kill_engage_reset_roundtrip():
         assert app._risk.killed is False
         assert kill_flag_reason(app.cfg.state_path) is None
     finally:
-        shutil.rmtree(d.name, ignore_errors=True)
+        d.cleanup()
