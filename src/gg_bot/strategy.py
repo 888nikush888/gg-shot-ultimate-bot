@@ -236,6 +236,45 @@ def pending_state(
     return "expired" if now_ts >= deadline_ts else "waiting"
 
 
+def _trend_line(prev_line, prev_dir, brk, lc, hc, buf, c):
+    # Linien-Update je Bar: gibt (line, d, tl, ts, turned) zurueck.
+    if _is_na(prev_line):
+        prev_line = lc if brk == 1 else (hc if brk == -1 else c)
+    if brk == 1:
+        line = max(prev_line, lc - buf)
+    elif brk == -1:
+        line = min(prev_line, hc + buf)
+    else:
+        line = prev_line
+    d = 1 if line > prev_line else (-1 if line < prev_line else prev_dir)
+    tl = prev_dir == -1 and d == 1
+    ts = prev_dir == 1 and d == -1
+    return line, d, tl, ts, (tl or ts) and d != prev_dir
+
+
+def _trend_touch(d, c, h, lo, line, sup_v, res_v, atr_v, zone, bounce_on, sr_on):
+    # Bounce/S-R-Touch je Bar: gibt (touch_l, touch_s) zurueck.
+    touch_l = (d == 1) and (
+        (bounce_on and lo <= line < c)
+        or (
+            sr_on
+            and not _is_na(sup_v)
+            and not _is_na(atr_v)
+            and lo <= sup_v + atr_v * zone < c
+        )
+    )
+    touch_s = (d == -1) and (
+        (bounce_on and c < line <= h)
+        or (
+            sr_on
+            and not _is_na(res_v)
+            and not _is_na(atr_v)
+            and c < res_v - atr_v * zone <= h
+        )
+    )
+    return touch_l, touch_s
+
+
 def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
     out = df.copy()
     basis, style = p.get("basis", "Bollinger"), p.get("style", "Sharp")
@@ -276,41 +315,16 @@ def trend_signals(df: pd.DataFrame, p: dict) -> pd.DataFrame:
             out["ad_high"].iloc[i],
         )
         buf = atr_v * buf_mult if buf_on else 0.0
-        if _is_na(prev_line):
-            prev_line = lc if brk == 1 else (hc if brk == -1 else c)
-        if brk == 1:
-            line = max(prev_line, lc - buf)
-        elif brk == -1:
-            line = min(prev_line, hc + buf)
-        else:
-            line = prev_line
-        d = 1 if line > prev_line else (-1 if line < prev_line else prev_dir)
-        tl = prev_dir == -1 and d == 1
-        ts = prev_dir == 1 and d == -1
-        if (tl or ts) and d != prev_dir:
+        line, d, tl, ts, turned = _trend_line(prev_line, prev_dir, brk, lc, hc, buf, c)
+        if turned:
             tnum += 1
         if mode == "Channel":
             lower, upper = out["lower"].iloc[i], out["upper"].iloc[i]
             touched = (lo <= lower) and (h >= upper)
             tl = (not touched) and (lo <= lower) and (c > lower)
             ts = (not touched) and (h >= upper) and (c < upper)
-        touch_l = (d == 1) and (
-            (bounce_on and lo <= line < c)
-            or (
-                sr_on
-                and not _is_na(sup[i])
-                and not _is_na(atr_v)
-                and lo <= sup[i] + atr_v * zone < c
-            )
-        )
-        touch_s = (d == -1) and (
-            (bounce_on and c < line <= h)
-            or (
-                sr_on
-                and not _is_na(res[i])
-                and not _is_na(atr_v)
-                and c < res[i] - atr_v * zone <= h
-            )
+        touch_l, touch_s = _trend_touch(
+            d, c, h, lo, line, sup[i], res[i], atr_v, zone, bounce_on, sr_on
         )
         bounce_l.append(adv and touch_l and not prev_touch_l)
         bounce_s.append(adv and touch_s and not prev_touch_s)

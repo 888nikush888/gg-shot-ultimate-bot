@@ -93,9 +93,8 @@ def should_send_error(
 
 
 def cached_equity(key: str, ex, symbol: str, mode: str, ttl: float = 60.0) -> float:
-    import time as _t
 
-    now = _t.time()
+    now = time.time()
     hit = _EQ_CACHE.get(key)
     if hit and now - hit[0] < ttl:
         return hit[1]
@@ -270,14 +269,14 @@ def last_price(ex, symbol: str, fallback: float) -> float:
         return fallback
 
 
-def evaluate(
-    df: pd.DataFrame, preset: dict, manual: dict, trend_entries: int = 0
-) -> dict:
+def _evaluate_frame(df, preset, manual):
     manual = S.normalize_manual(manual)
     p = {**preset, **{k: v for k, v in manual.items() if v is not None}}
     f = S.trend_signals(S.compute_frame(df, p), p)
-    last = f.iloc[-1]
-    fm = p.get("filter_mode", "Aus")
+    return p, f.iloc[-1]
+
+
+def _filter_state(p, last):
     atr_tr = bool(last["f_atr"] >= last["f_avg"]) if pd.notna(last["f_atr"]) else False
     rsi_tr = bool(
         last["rsi"] > float(p.get("rsi_upper", 45))
@@ -295,7 +294,7 @@ def evaluate(
         "ATR und RSI": atr_tr and rsi_tr,
         "Seitwaerts: ATR oder RSI": (not atr_tr) or flat,
         "Seitwaerts: ATR und RSI": (not atr_tr) and flat,
-    }.get(fm, True)
+    }.get(p.get("filter_mode", "Aus"), True)
     vol_ok = True
     if p.get("volume_on"):
         va = last.get("vol_avg", float("nan"))
@@ -305,10 +304,10 @@ def evaluate(
             and last["volume"] / va >= float(p.get("volume_min", 1.0))
         )
     base_ok = bool(pd.notna(last["atr"]) and pd.notna(last["trend_line"]))
-    mode = p.get("mode", "Standard")
-    adv = mode == "Advanced"
-    max_re = int(p.get("max_reentries", 1))
-    re_ok = adv and bool(p.get("reentry_on", False)) and trend_entries <= max_re
+    return filt, vol_ok, base_ok
+
+
+def _osc_state(p, last):
     osc_mode = p.get("osc_mode", "Aus")
     tdir = int(last["trend_dir"]) if pd.notna(last["trend_dir"]) else 0
     osc_l = (
@@ -321,6 +320,14 @@ def evaluate(
         and bool(last.get("osc_cross_dn", False))
         and (osc_mode == "Beide Richtungen" or tdir == -1)
     )
+    return osc_l, osc_s
+
+
+def _want_state(p, last, osc_l, osc_s, trend_entries):
+    mode = p.get("mode", "Standard")
+    adv = mode == "Advanced"
+    max_re = int(p.get("max_reentries", 1))
+    re_ok = adv and bool(p.get("reentry_on", False)) and trend_entries <= max_re
     extra_l = bool(last.get("bounce_long", False)) or (
         bool(p.get("osc_reentries", False)) and re_ok and trend_entries > 0 and osc_l
     )
@@ -342,22 +349,11 @@ def evaluate(
         want_l = False
     if not p.get("allow_short", True):
         want_s = False
-    import datetime as _dt
+    return want_l, want_s
 
-    now = _dt.datetime.now(_dt.timezone.utc)
-    sess_ok = S.session_allows(now, p) and S.date_allows(now, p)
+
+def _signal_levels(last):
     return {
-        "long": want_l and filt and vol_ok and base_ok,
-        "short": want_s and filt and vol_ok and base_ok,
-        "session_ok": sess_ok,
-        "close": float(last["close"]),
-        "high": float(last["high"]),
-        "low": float(last["low"]),
-        "atr": float(last["atr"] if pd.notna(last["atr"]) else 0.0),
-        "trend_line": float(
-            last["trend_line"] if pd.notna(last["trend_line"]) else last["close"]
-        ),
-        "trend_no": int(last.get("trend_no", 0)),
         "support": float(last["support"])
         if pd.notna(last.get("support", float("nan")))
         else None,
@@ -376,11 +372,72 @@ def evaluate(
         "rng_lo": float(last["lower"])
         if pd.notna(last.get("lower", float("nan")))
         else None,
+    }
+
+
+def evaluate(
+    df: pd.DataFrame, preset: dict, manual: dict, trend_entries: int = 0
+) -> dict:
+    p, last = _evaluate_frame(df, preset, manual)
+    filt, vol_ok, base_ok = _filter_state(p, last)
+    osc_l, osc_s = _osc_state(p, last)
+    want_l, want_s = _want_state(p, last, osc_l, osc_s, trend_entries)
+    now = datetime.now(timezone.utc)
+    sess_ok = S.session_allows(now, p) and S.date_allows(now, p)
+    return {
+        "long": want_l and filt and vol_ok and base_ok,
+        "short": want_s and filt and vol_ok and base_ok,
+        "session_ok": sess_ok,
+        "close": float(last["close"]),
+        "high": float(last["high"]),
+        "low": float(last["low"]),
+        "atr": float(last["atr"] if pd.notna(last["atr"]) else 0.0),
+        "trend_line": float(
+            last["trend_line"] if pd.notna(last["trend_line"]) else last["close"]
+        ),
+        "trend_no": int(last.get("trend_no", 0)),
+        **_signal_levels(last),
         "osc_long": osc_l,
         "osc_short": osc_s,
         "bounce_long": bool(last.get("bounce_long", False)),
         "bounce_short": bool(last.get("bounce_short", False)),
     }
+
+
+def _ref_pad(ref):
+    tick = ref.get("tick")
+    return float(ref.get("pad_ticks", 1)) * tick if tick else None
+
+
+def _stop_prozent(anchor, sgn, preset, atr_v):
+    return anchor * (1 - sgn * float(preset.get("stop_pct", 3.0)) / 100)
+
+
+def _stop_atr(anchor, sgn, preset, atr_v):
+    return anchor - sgn * atr_v * float(preset.get("stop_atr_mult", 6.0))
+
+
+def _stop_trendlinie(anchor, sgn, ref):
+    pad = _ref_pad(ref)
+    if ref.get("trend_line") is None or pad is None:
+        raise ValueError("Trendlinien-Stop braucht trend_line + tick")
+    return float(ref["trend_line"]) - sgn * pad
+
+
+def _stop_sr(anchor, sgn, side, ref):
+    lvl = ref.get("support") if side == "long" else ref.get("resistance")
+    pad = _ref_pad(ref)
+    if lvl is None or pad is None:
+        raise ValueError("S/R-Stop braucht Support/Resistance + tick")
+    return float(lvl) - sgn * pad
+
+
+def _stop_auto(anchor, sgn, preset, atr_v, ref):
+    rev = anchor - sgn * abs(anchor - float(ref.get("reverse", anchor)))
+    pad = _ref_pad(ref)
+    if pad is not None:
+        rev = rev - sgn * pad
+    return rev
 
 
 def entry_prices(
@@ -393,29 +450,20 @@ def entry_prices(
 ) -> float:
     sgn = 1 if side == "long" else -1
     if stop_mode == "Prozent":
-        return anchor * (1 - sgn * float(preset.get("stop_pct", 3.0)) / 100)
+        return _stop_prozent(anchor, sgn, preset, atr_v)
     if stop_mode == "ATR":
-        return anchor - sgn * atr_v * float(preset.get("stop_atr_mult", 6.0))
+        return _stop_atr(anchor, sgn, preset, atr_v)
     if ref is None:
         raise ValueError(
             f"stop_mode {stop_mode} braucht Trendlinie/S-R-Referenz (kein stiller ATR-Fallback)"
         )
-    tick = ref.get("tick")
-    pad = float(ref.get("pad_ticks", 1)) * tick if tick else None
     if stop_mode == "Trendlinie":
-        if ref.get("trend_line") is None or pad is None:
-            raise ValueError("Trendlinien-Stop braucht trend_line + tick")
-        return float(ref["trend_line"]) - sgn * pad
+        return _stop_trendlinie(anchor, sgn, ref)
     if stop_mode == "S/R":
-        lvl = ref.get("support") if side == "long" else ref.get("resistance")
-        if lvl is None or pad is None:
-            raise ValueError("S/R-Stop braucht Support/Resistance + tick")
-        return float(lvl) - sgn * pad
+        return _stop_sr(anchor, sgn, side, ref)
     if stop_mode == "Automatisch":
-        pct = anchor * (1 - sgn * float(preset.get("stop_pct", 3.0)) / 100)
-        rev = anchor - sgn * abs(anchor - float(ref.get("reverse", anchor)))
-        if pad is not None:
-            rev = rev - sgn * pad
+        pct = _stop_prozent(anchor, sgn, preset, atr_v)
+        rev = _stop_auto(anchor, sgn, preset, atr_v, ref)
         return max(pct, rev) if side == "long" else min(pct, rev)
     raise ValueError(f"unbekannter stop_mode: {stop_mode}")
 
@@ -476,6 +524,95 @@ def tranche_pnl(
     return gross - abs(px * qty) * fee_pct / 100.0 - abs(entry * qty) * fee_pct / 100.0
 
 
+def _stop_fill(side, unf, cycle):
+    if (side == "long" and unf <= cycle["stop"]) or (
+        side == "short" and unf >= cycle["stop"]
+    ):
+        rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
+        if rem > 0:
+            return [(rem, cycle["stop"], cycle["stop_reason"])], cycle["stop_reason"]
+        return [], cycle["stop_reason"]
+    return None
+
+
+def _tp_fills(side, fav, cycle):
+    out = []
+    for t in cycle["tps"]:
+        if t["hit"]:
+            continue
+        if (side == "long" and fav >= t["price"]) or (
+            side == "short" and fav <= t["price"]
+        ):
+            t["hit"] = True
+            out.append((t["qty"], t["price"], "TP"))
+    return out
+
+
+def _maybe_break_even(cycle, rr, manual):
+    cur_hits = [t["hit"] for t in cycle["tps"]]
+    be_mode = cycle["be_mode"]
+    be_thr = float((manual or {}).get("be_r", 1.0))
+    if be_mode != "Aus" and S.trigger_hit(be_mode, cur_hits, rr, be_thr):
+        sgn = 1 if cycle["side"] == "long" else -1
+        buf = cycle["entry"] * cycle["be_buffer"] / 100.0
+        cand = cycle["entry"] + sgn * buf
+        if sgn * (cand - cycle["stop"]) > 0:
+            cycle["stop"], cycle["stop_reason"] = cand, "BE"
+            return cand
+    return None
+
+
+def _maybe_trail(cycle, rr, manual, atr_v, trend_line):
+    tm = cycle["trail_mode"]
+    tr_thr = float((manual or {}).get("trail_r", 1.0))
+    cur_hits = [t["hit"] for t in cycle["tps"]]
+    if tm != "Aus" and S.trigger_hit(
+        cycle.get("trail_start", "TP1"), cur_hits, rr, tr_thr
+    ):
+        sgn = 1 if cycle["side"] == "long" else -1
+        cand = None
+        if tm == "ATR":
+            cand = cycle["extreme"] - sgn * atr_v * cycle["trail_atr"]
+        elif tm == "Prozent":
+            cand = cycle["extreme"] * (1 - sgn * cycle["trail_pct"] / 100.0)
+        elif tm == "Trendlinie":
+            cand = trend_line
+        if cand is not None and sgn * (cand - cycle["stop"]) > 0:
+            cycle["stop"], cycle["stop_reason"] = cand, "TRAIL"
+            return cand
+    return None
+
+
+def _opposite_close(side, sig, cycle, price):
+    opp = (side == "long" and sig["short"]) or (side == "short" and sig["long"])
+    if opp and cycle["opposite_mode"] in ("Schliessen", "Schliessen und drehen"):
+        rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
+        out = [(rem, price, "OPP")] if rem > 0 else []
+        if cycle["opposite_mode"] == "Schliessen und drehen":
+            return out, "OPP_REVERSE"
+        return out, "OPP"
+    return None
+
+
+def _osc_close(side, sig, cycle, price, manual, rr):
+    if (manual or {}).get("osc_mode", "Aus") == "Aus":
+        return None
+    ox = (side == "long" and sig.get("osc_short")) or (
+        side == "short" and sig.get("osc_long")
+    )
+    gate = (manual or {}).get("osc_exit_after", "Nach TP1")
+    ok = (
+        gate == "Immer"
+        or (gate == "Im Gewinn" and rr > 0)
+        or (gate == "Nach TP1" and any(t["hit"] for t in cycle["tps"]))
+    )
+    if ox and ok:
+        rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
+        out = [(rem, price, "OSC")] if rem > 0 else []
+        return out, "OSC"
+    return None
+
+
 def monitor(
     cycle: dict,
     price: float,
@@ -486,7 +623,7 @@ def monitor(
     sig: dict,
     manual: dict,
 ) -> dict:
-    """Advance one open cycle. Returns events: closes=[(qty,px,reason)], new_stop, hits, closed_all."""
+    # Advance one open cycle. Events: closes=[(qty,px,reason)], new_stop, hits, closed_all.
     side, entry = cycle["side"], cycle["entry"]
     sgn = 1 if side == "long" else -1
     fav = max(hi, price) if side == "long" else min(lo, price)
@@ -501,82 +638,34 @@ def monitor(
     )
     out = {"closes": [], "new_stop": None, "closed_all": False, "why": ""}
     # 1. stop hit?
-    if (side == "long" and unf <= cycle["stop"]) or (
-        side == "short" and unf >= cycle["stop"]
-    ):
-        rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
-        if rem > 0:
-            out["closes"].append((rem, cycle["stop"], cycle["stop_reason"]))
+    stop_ev = _stop_fill(side, unf, cycle)
+    if stop_ev is not None:
+        out["closes"].extend(stop_ev[0])
         out["closed_all"] = True
-        out["why"] = cycle["stop_reason"]
+        out["why"] = stop_ev[1]
         return out
-    # 2. TP hits in order
-    for t in cycle["tps"]:
-        if t["hit"]:
-            continue
-        if (side == "long" and fav >= t["price"]) or (
-            side == "short" and fav <= t["price"]
-        ):
-            t["hit"] = True
-            out["closes"].append((t["qty"], t["price"], "TP"))
-    # 3. break-even (fresh hits: TPs filled above already count)
-    cur_hits = [t["hit"] for t in cycle["tps"]]
-    be_mode = cycle["be_mode"]
-    be_thr = float((manual or {}).get("be_r", 1.0))
-    if be_mode != "Aus" and S.trigger_hit(be_mode, cur_hits, rr, be_thr):
-        buf = entry * cycle["be_buffer"] / 100.0
-        cand = entry + sgn * buf
-        if sgn * (cand - cycle["stop"]) > 0:
-            cycle["stop"], cycle["stop_reason"] = cand, "BE"
-            out["new_stop"] = cand
+    # 2. TP hits in order (fresh hits: TPs filled above already count)
+    out["closes"].extend(_tp_fills(side, fav, cycle))
+    # 3. break-even
+    be = _maybe_break_even(cycle, rr, manual)
+    if be is not None:
+        out["new_stop"] = be
     # 4. trailing
-    tm = cycle["trail_mode"]
-    tr_thr = float((manual or {}).get("trail_r", 1.0))
-    if tm != "Aus" and S.trigger_hit(
-        cycle.get("trail_start", "TP1"), cur_hits, rr, tr_thr
-    ):
-        cand = None
-        if tm == "ATR":
-            cand = cycle["extreme"] - sgn * atr_v * cycle["trail_atr"]
-        elif tm == "Prozent":
-            cand = cycle["extreme"] * (1 - sgn * cycle["trail_pct"] / 100.0)
-        elif tm == "Trendlinie":
-            cand = trend_line
-        if cand is not None and sgn * (cand - cycle["stop"]) > 0:
-            cycle["stop"], cycle["stop_reason"] = cand, "TRAIL"
-            out["new_stop"] = cand
+    tr = _maybe_trail(cycle, rr, manual, atr_v, trend_line)
+    if tr is not None:
+        out["new_stop"] = tr
     # 5. opposite signal
-    opp = (side == "long" and sig["short"]) or (side == "short" and sig["long"])
-    if opp:
-        if cycle["opposite_mode"] == "Schliessen":
-            rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
-            if rem > 0:
-                out["closes"].append((rem, price, "OPP"))
-            out["closed_all"] = True
-            out["why"] = "OPP"
-        elif cycle["opposite_mode"] == "Schliessen und drehen":
-            rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
-            if rem > 0:
-                out["closes"].append((rem, price, "OPP"))
-            out["closed_all"] = True
-            out["why"] = "OPP_REVERSE"
+    opp = _opposite_close(side, sig, cycle, price)
+    if opp is not None:
+        out["closes"].extend(opp[0])
+        out["closed_all"] = True
+        out["why"] = opp[1]
     # 6. oscillator exit (only when manually enabled)
-    if (manual or {}).get("osc_mode", "Aus") != "Aus":
-        ox = (side == "long" and sig.get("osc_short")) or (
-            side == "short" and sig.get("osc_long")
-        )
-        gate = (manual or {}).get("osc_exit_after", "Nach TP1")
-        ok = (
-            gate == "Immer"
-            or (gate == "Im Gewinn" and rr > 0)
-            or (gate == "Nach TP1" and any(t["hit"] for t in cycle["tps"]))
-        )
-        if ox and ok and not out["closed_all"]:
-            rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
-            if rem > 0:
-                out["closes"].append((rem, price, "OSC"))
-            out["closed_all"] = True
-            out["why"] = "OSC"
+    osc = _osc_close(side, sig, cycle, price, manual, rr)
+    if osc is not None and not out["closed_all"]:
+        out["closes"].extend(osc[0])
+        out["closed_all"] = True
+        out["why"] = osc[1]
     return out
 
 
@@ -798,8 +887,6 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     if cfg.telegram.enabled:
                         TG.send(msg)
                 if cycle and cycle.get("pending"):
-                    import time as _pt
-
                     if cfg.mode == "live":
                         _filled = live_qty != 0.0
                     else:
@@ -809,7 +896,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         )
                     if _filled:
                         cycle.pop("pending", None)
-                    elif _pt.time() >= float(cycle.get("deadline", 0)):
+                    elif time.time() >= float(cycle.get("deadline", 0)):
                         if cfg.mode == "live":
                             from .orders import cancel_open as _cancel
 
@@ -1078,12 +1165,10 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                                 close_position(ex, s.symbol, want, qty)
                             continue
                 if _is_pullback:
-                    import time as _pb
-
                     cycle["pending"] = True
                     cycle["anchor"] = anchor
                     cycle["deadline"] = (
-                        _pb.time()
+                        time.time()
                         + int(man.get("limit_life", 10)) * tf_min[s.symbol] * 60
                     )
                 else:
@@ -1131,12 +1216,11 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
 
 
 def cooldown_ok(risk: RiskState, key: str, tf_minutes: int, cooldown_bars: int) -> bool:
-    import time as _t
 
     last = risk.last_flat_bar.get(key)
     if last is None:
         return True
-    return _t.time() >= last + cooldown_bars * tf_minutes * 60
+    return time.time() >= last + cooldown_bars * tf_minutes * 60
 
 
 def finish_close(
@@ -1150,13 +1234,11 @@ def finish_close(
     why: str,
     equity: float = 10000.0,
 ) -> None:
-    from datetime import datetime, timezone as _tz
-    import time as _t
 
     db.execute(
         "INSERT INTO cycles(ts,exchange,symbol,side,entry,stop,qty,pnl,note) VALUES (?,?,?,?,?,?,?,?,?)",
         (
-            datetime.now(_tz.utc).isoformat(),
+            datetime.now(timezone.utc).isoformat(),
             s.exchange,
             s.symbol,
             1 if cycle["side"] == "long" else -1,
@@ -1169,7 +1251,7 @@ def finish_close(
     )
     db.commit()
     clear_open(db, s.exchange, s.symbol)
-    risk.last_flat_bar[f"{s.exchange}:{s.symbol}"] = _t.time()
+    risk.last_flat_bar[f"{s.exchange}:{s.symbol}"] = time.time()
     try:
         msg = risk.register_pnl(pnl, cfg.risk.max_daily_loss_pct, equity)
         if msg:
