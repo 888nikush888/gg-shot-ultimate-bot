@@ -3904,7 +3904,57 @@
       "volume_on": true,
       "volume_min": 1.1,
       "be_buffer": 0.2,
-      "trail_pct": 1.4
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "NEAR_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "PEPE_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "SHIB_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "DOT_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "LINK_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "ETC_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
+    },
+    "LTC_1h": {
+      "volume_on": true,
+      "volume_min": 1.1,
+      "be_buffer": 0.2,
+      "trail_pct": 1.4,
+      "stop_pct": 4.5
     },
     "BTC_30m": {
       "volume_on": true,
