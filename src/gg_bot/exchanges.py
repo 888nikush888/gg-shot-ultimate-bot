@@ -3,6 +3,7 @@
 from __future__ import annotations
 from contextlib import suppress
 import os
+from typing import Any
 
 
 def _hyperliquid(testnet: bool, need_auth: bool):
@@ -29,7 +30,7 @@ def _aster(testnet: bool, need_auth: bool):
 
     key = os.getenv("ASTER_API_KEY", "")
     sec = os.getenv("ASTER_API_SECRET", "")
-    params: dict = {"options": {"defaultType": "swap"}}
+    params: dict[str, Any] = {"options": {"defaultType": "swap"}}
     if key and sec:
         params.update({"apiKey": key, "secret": sec})
     elif need_auth:
@@ -45,7 +46,7 @@ def _binance(testnet: bool, need_auth: bool):
 
     key = os.getenv("BINANCE_API_KEY", "")
     sec = os.getenv("BINANCE_API_SECRET", "")
-    params = {"options": {"defaultType": "swap"}}
+    params: dict[str, Any] = {"options": {"defaultType": "swap"}}
     if key and sec:
         params.update({"apiKey": key, "secret": sec})
     elif need_auth:
