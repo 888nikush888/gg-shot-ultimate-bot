@@ -100,6 +100,18 @@ def save_open_if_changed(db, exchange: str, symbol: str, payload: dict, cache: d
     return True
 
 
+def should_resize_native_stop(order_mode: str, live: bool, closes: list) -> bool:
+    """Re-size nativen SL nach jedem nativen TP-Fill (Restmenge schrumpft)."""
+    return live and order_mode == "exchange_native" and any(r == "TP" for _, _, r in closes)
+
+
+def pullback_anchor(price: float, side: str, atr_v: float, manual: dict) -> float:
+    sgn = 1 if side == "long" else -1
+    if manual.get("entry_unit", "ATR") == "ATR":
+        return price - sgn * atr_v * float(manual.get("pullback_distance", 0.5))
+    return price - sgn * price * float(manual.get("pullback_distance", 0.5)) / 100.0
+
+
 def closed_frame(df: pd.DataFrame) -> pd.DataFrame:
     """Signals only on confirmed candles (Pine timing=Kerzenschluss, no repaint)."""
     return df.iloc[:-1] if len(df) > 1 else df
@@ -119,14 +131,9 @@ def last_price(ex, symbol: str, fallback: float) -> float:
     except Exception:
         return fallback
 
-_EXTRA_KEYS = ("pivot_len", "osc_low", "osc_high", "osc_rsi_len", "osc_stoch_len",
-                "osc_k_len", "osc_d_len", "tp_weights", "fee_pct", "be_r", "trail_r",
-                "osc_mode", "osc_entries", "osc_exit_after", "entry_mode", "legs",
-                "session_on", "sizing", "risk_pct", "capital_pct")
-
-def evaluate(df: pd.DataFrame, preset: dict, manual: dict) -> dict:
-    manual = manual or {}
-    p = {**preset, **{k: v for k, v in manual.items() if v is not None and (k in preset or k in _EXTRA_KEYS)}}
+def evaluate(df: pd.DataFrame, preset: dict, manual: dict, trend_entries: int = 0) -> dict:
+    manual = S.normalize_manual(manual)
+    p = {**preset, **{k: v for k, v in manual.items() if v is not None}}
     f = S.trend_signals(S.compute_frame(df, p), p)
     last = f.iloc[-1]
     fm = p.get("filter_mode", "Aus")
@@ -141,13 +148,44 @@ def evaluate(df: pd.DataFrame, preset: dict, manual: dict) -> dict:
         va = last.get("vol_avg", float("nan"))
         vol_ok = bool(pd.notna(va) and va > 0 and last["volume"] / va >= float(p.get("volume_min", 1.0)))
     base_ok = bool(pd.notna(last["atr"]) and pd.notna(last["trend_line"]))
-    return {"long": bool(last["turn_long"]) and filt and vol_ok and base_ok,
-            "short": bool(last["turn_short"]) and filt and vol_ok and base_ok,
+    mode = p.get("mode", "Standard")
+    adv = mode == "Advanced"
+    max_re = int(p.get("max_reentries", 1))
+    re_ok = adv and bool(p.get("reentry_on", False)) and trend_entries <= max_re
+    osc_mode = p.get("osc_mode", "Aus")
+    tdir = int(last["trend_dir"]) if pd.notna(last["trend_dir"]) else 0
+    osc_l = osc_mode != "Aus" and bool(last.get("osc_cross_up", False)) and (osc_mode == "Beide Richtungen" or tdir == 1)
+    osc_s = osc_mode != "Aus" and bool(last.get("osc_cross_dn", False)) and (osc_mode == "Beide Richtungen" or tdir == -1)
+    extra_l = bool(last.get("bounce_long", False)) or (bool(p.get("osc_reentries", False)) and re_ok and trend_entries > 0 and osc_l)
+    extra_s = bool(last.get("bounce_short", False)) or (bool(p.get("osc_reentries", False)) and re_ok and trend_entries > 0 and osc_s)
+    if trend_entries > 0:
+        extra_l = extra_l and re_ok
+        extra_s = extra_s and re_ok
+    want_l = bool(last["turn_long"]) or extra_l
+    want_s = bool(last["turn_short"]) or extra_s
+    if not want_l and not want_s and bool(p.get("osc_entries", False)):
+        want_l, want_s = osc_l, osc_s
+    if p.get("div_mode", "Aus") == "Filter":
+        div_age = float(p.get("div_age", 20))
+        want_l = want_l and bool(last.get("bull_div_age", float("inf")) <= div_age)
+        want_s = want_s and bool(last.get("bear_div_age", float("inf")) <= div_age)
+    if not p.get("allow_long", True):
+        want_l = False
+    if not p.get("allow_short", True):
+        want_s = False
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc)
+    sess_ok = S.session_allows(now, p) and S.date_allows(now, p)
+    return {"long": want_l and filt and vol_ok and base_ok,
+            "short": want_s and filt and vol_ok and base_ok,
+            "session_ok": sess_ok,
             "close": float(last["close"]), "high": float(last["high"]), "low": float(last["low"]),
             "atr": float(last["atr"] if pd.notna(last["atr"]) else 0.0),
             "trend_line": float(last["trend_line"] if pd.notna(last["trend_line"]) else last["close"]),
-            "osc_long": bool(last.get("osc_cross_up", False)),
-            "osc_short": bool(last.get("osc_cross_dn", False))}
+            "trend_no": int(last.get("trend_no", 0)),
+            "osc_long": osc_l, "osc_short": osc_s,
+            "bounce_long": bool(last.get("bounce_long", False)),
+            "bounce_short": bool(last.get("bounce_short", False))}
 
 def entry_prices(anchor: float, side: str, stop_mode: str, preset: dict, atr_v: float) -> float:
     if stop_mode == "Prozent":
@@ -268,8 +306,14 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
     _flag = kill_flag_reason(cfg.state_path)
     risk = RiskState(killed=cfg.risk.kill_switch_on_start or _flag is not None, kill_reason="kill_switch_on_start" if cfg.risk.kill_switch_on_start else (_flag or ""))
     db = connect(cfg.state_path)
-    if (cfg.manual or {}).get("legs", 1) != 1 or (cfg.manual or {}).get("entry_mode", "Market") != "Market":
-        raise SystemExit("nur legs=1 + entry_mode=Market werden unterstuetzt (Fail-fast statt stiller Fehlberechnung)")
+    man = S.normalize_manual(cfg.manual)
+    if man.get("mode", "Standard") not in ("Standard", "Advanced", "Channel"):
+        raise SystemExit("mode muss Standard/Advanced/Channel sein (Classic braucht Gewinn-Trailing-Engine)")
+    for _j in range(1, 5):
+        if man.get(f"tp_mode_{_j}", "Fest") != "Fest":
+            raise SystemExit("nur tp_mode Fest wird unterstuetzt (ATR-adaptiv/Gewinn-Trailing braucht Ziel-Neuberechnung)")
+    if man.get("legs", 1) != 1 or man.get("entry_mode", "Market") not in ("Market", "Pullback-Limit"):
+        raise SystemExit("nur legs=1 + entry_mode Market/Pullback-Limit werden unterstuetzt (kein Gestaffelt)")
     ex_map: dict = {}
     lev_ok: dict[str, bool] = {}
     warned: set[str] = set()
@@ -296,6 +340,7 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
         TG.send(f"Bot gestartet (LIVE): {len(cfg.symbols)} Symbole")
     cycle_no = 0
     tf_min = {s.symbol: TF_MINUTES.get(s.timeframe, 60) for s in cfg.symbols}
+    trend_state: dict[str, dict] = {}
     while True:
         _flag = kill_flag_reason(cfg.state_path)
         if _flag is not None and not risk.killed:
@@ -310,7 +355,13 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                 df = fetch_frame(ex, s.symbol, s.timeframe)
                 if len(df) < 2:
                     continue
-                sig = evaluate(closed_frame(df), preset, cfg.manual or {})
+                use_live_bars = S.normalize_manual(cfg.manual).get("timing", "Kerzenschluss") == "Echtzeit"
+                frame = df if use_live_bars else closed_frame(df)
+                st = trend_state.setdefault(key, {"trend": -1, "entries": 0})
+                sig = evaluate(frame, preset, cfg.manual or {}, trend_entries=st["entries"] if st["trend"] != -1 else 0)
+                if sig["trend_no"] != st["trend"]:
+                    st["trend"] = sig["trend_no"]
+                    st["entries"] = 0
                 price = last_price(ex, s.symbol, sig["close"]) if cfg.mode == "live" else sig["close"]
                 forming = df.iloc[-1]
                 ex_hi = max(float(forming["high"]), price)
@@ -334,6 +385,28 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     log.error("unmanaged position", extra={"symbol": s.symbol})
                     if cfg.telegram.enabled:
                         TG.send(msg)
+                if cycle and cycle.get("pending"):
+                    import time as _pt
+                    if cfg.mode == "live":
+                        _filled = live_qty != 0.0
+                    else:
+                        _a = float(cycle.get("anchor", cycle["entry"]))
+                        _filled = (cycle["side"] == "long" and ex_lo <= _a) or (cycle["side"] == "short" and ex_hi >= _a)
+                    if _filled:
+                        cycle.pop("pending", None)
+                    elif _pt.time() >= float(cycle.get("deadline", 0)):
+                        if cfg.mode == "live":
+                            from .orders import cancel_open as _cancel
+                            try:
+                                _cancel(ex, s.symbol)
+                            except Exception:
+                                pass
+                        clear_open(db, s.exchange, s.symbol)
+                        audit(db, "engine", "expired", f"{s.exchange} {s.symbol} pullback-limit abgelaufen")
+                        cycle = None
+                        continue
+                    else:
+                        continue
                 if cycle:
                     if cycle.pop("just_opened", False):
                         save_open_if_changed(db, s.exchange, s.symbol, cycle, saved_hash)
@@ -365,6 +438,14 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                         cycle["realized"] += tranche_pnl(cycle["side"], cycle["entry"], px, qty, cycle["fee_pct"])
                     if s.order_mode == "exchange_native" and ev["new_stop"] and cfg.mode == "live":
                         move_native_stop(ex, s.symbol, cycle)
+                    elif should_resize_native_stop(s.order_mode, cfg.mode == "live", ev["closes"]) and not ev["closed_all"]:
+                        move_native_stop(ex, s.symbol, cycle)  # Menge an Live-Rest anpassen
+                    if not ev["closed_all"] and man.get("close_session", False) and not sig.get("session_ok", True):
+                        _rem = sum(t["qty"] for t in cycle["tps"] if not t["hit"])
+                        if _rem > 0:
+                            ev["closes"].append((_rem, price, "SESSION"))
+                        ev["closed_all"] = True
+                        ev["why"] = "SESSION"
                     if ev["closed_all"]:
                         try:
                             eq = cached_equity(key, ex, s.symbol, cfg.mode)
@@ -389,8 +470,13 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                 want = "long" if sig["long"] else ("short" if sig["short"] else "")
                 if not want:
                     continue
+                if not sig.get("session_ok", True):
+                    continue  # Session-/Datumsfilter
                 equity = cached_equity(key, ex, s.symbol, cfg.mode)
                 anchor = price
+                _is_pullback = man.get("entry_mode", "Market") == "Pullback-Limit"
+                if _is_pullback:
+                    anchor = pullback_anchor(price, want, sig["atr"], man)
                 stop = round_price(ex, s.symbol, entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"])) if cfg.mode == "live" else entry_prices(anchor, want, preset.get("stop_mode", "Prozent"), preset, sig["atr"])
                 if want == "long" and anchor <= stop or want == "short" and anchor >= stop:
                     continue
@@ -410,10 +496,10 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                     log.error("under exchange minimum, skipped", extra={"symbol": s.symbol, "qty": qty})
                     continue
                 cycle_no += 1
-                cycle = build_cycle(cycle_no, want, qty, anchor, stop, preset, cfg.manual or {}, sig["atr"])
+                cycle = build_cycle(cycle_no, want, qty, anchor, stop, preset, man, sig["atr"])
                 if cfg.mode == "live":
                     from .orders import place_entry, place_bracket, client_id
-                    fill = place_entry(ex, s.symbol, want, qty, None, client_id(cycle_no, 0, 9))
+                    fill = place_entry(ex, s.symbol, want, qty, anchor if _is_pullback else None, client_id(cycle_no, 0, 9))
                     try:
                         cycle["entry"] = float(fill.get("average") or fill.get("price") or anchor)
                     except Exception:
@@ -432,8 +518,15 @@ def run_loop(cfg: AppCfg, once: bool = False) -> None:
                             except Exception:
                                 pass
                             continue
-                cycle["just_opened"] = True
+                if _is_pullback:
+                    import time as _pb
+                    cycle["pending"] = True
+                    cycle["anchor"] = anchor
+                    cycle["deadline"] = _pb.time() + int(man.get("limit_life", 10)) * tf_min[s.symbol] * 60
+                else:
+                    cycle["just_opened"] = True
                 save_open(db, s.exchange, s.symbol, cycle)
+                trend_state[key]["entries"] += 1
                 audit(db, "engine", "entry", f"{s.exchange} {s.symbol} {want} qty={qty} entry={anchor} stop={stop}")
                 if cfg.telegram.enabled and (cfg.telegram.notify_open if hasattr(cfg.telegram, "notify_open") else True):
                     TG.trade_open(s.exchange, s.symbol, want, qty, anchor, stop)

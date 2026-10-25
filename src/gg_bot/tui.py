@@ -131,6 +131,7 @@ class DashboardApp(App):
         from .presets import list_presets
         assets = sorted({k.rsplit("_", 1)[0] for k in list_presets() if "_" in k})
         self.query_one("#ps-asset", Select).set_options([(a, a) for a in assets])
+        self.query_one("#ps-finetune", Checkbox).value = bool(self.cfg.fine_tune)
 
     def _selected_symbol(self, wid: str):
         val = self.query_one("#" + wid, Select).value
@@ -176,19 +177,31 @@ class DashboardApp(App):
                       str(s.leverage), s.order_mode, "Y" if s.enabled else "n", pos)
 
     def _live_qty(self, exchange: str, symbol: str) -> str:
+        import time as _t
         from . import exchanges as X
-        try:
-            ex = X.build(exchange, need_auth=True)
-        except Exception:
+        if not hasattr(self, "_ex_cache"):
+            self._ex_cache = {}
+            self._qty_cache = {}
+        now = _t.time()
+        hit = self._qty_cache.get(exchange + ":" + symbol)
+        if hit and now - hit[0] < 30.0:
+            return hit[1]
+        if exchange not in self._ex_cache:
             try:
-                ex = X.build(exchange, need_auth=False)
+                self._ex_cache[exchange] = X.build(exchange, need_auth=True)
             except Exception:
-                return "n/a"
+                try:
+                    self._ex_cache[exchange] = X.build(exchange, need_auth=False)
+                except Exception:
+                    return "n/a"
+        ex = self._ex_cache[exchange]
         try:
             q = X.fetch_position_qty(ex, symbol)
-            return str(q)
+            out = str(q)
         except Exception:
             return "n/a"
+        self._qty_cache[exchange + ":" + symbol] = (now, out)
+        return out
 
     def refresh_positions(self) -> None:
         t = self.query_one("#pos-table", DataTable)
@@ -226,10 +239,16 @@ class DashboardApp(App):
     async def _confirm(self, message: str) -> bool:
         return await self.push_screen(ConfirmModal(message))
 
-    def _save(self) -> None:
+    def _save(self, note: str = "Restart engine to apply.") -> None:
+        import os
         from .config import save_config
         save_config(self.cfg, self._config_path)
+        os.environ["BOT_MODE"] = self.cfg.mode
         self.reload_config()
+        try:
+            self.notify(note)
+        except Exception:
+            pass
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         bid = event.button.id
@@ -280,6 +299,8 @@ class DashboardApp(App):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id == "ps-filter":
             self.list_presets()
+        elif event.input.id == "bt-limit":
+            self.run_worker(self._run_backtest(), exclusive=True)
 
     def list_presets(self) -> None:
         from .presets import list_presets
@@ -358,12 +379,17 @@ class DashboardApp(App):
         from . import exchanges as X
         from .orders import close_all
         from .engine import finish_close, get_equity, last_price
+        ex_cache: dict = {}
+        def _ex(name: str, auth: bool):
+            if name not in ex_cache:
+                ex_cache[name] = X.build(name, need_auth=auth)
+            return ex_cache[name]
         for s in self.cfg.symbols:
             if not s.enabled:
                 continue
             if self.cfg.mode == "live":
                 try:
-                    close_all(X.build(s.exchange), s.symbol)
+                    close_all(_ex(s.exchange, True), s.symbol)
                 except Exception:
                     pass
             from .state import connect, load_open
@@ -372,11 +398,11 @@ class DashboardApp(App):
                 oc = load_open(db, s.exchange, s.symbol)
                 if oc:
                     try:
-                        px = last_price(X.build(s.exchange, need_auth=False), s.symbol, oc["entry"])
+                        px = last_price(_ex(s.exchange, self.cfg.mode == "live"), s.symbol, oc["entry"])
                     except Exception:
                         px = oc["entry"]
                     try:
-                        eq = get_equity(X.build(s.exchange, need_auth=False), s.symbol, self.cfg.mode)
+                        eq = get_equity(_ex(s.exchange, self.cfg.mode == "live"), s.symbol, self.cfg.mode)
                     except Exception:
                         eq = 10000.0
                     finish_close(db, self._risk, self.cfg, s, oc, oc.get("realized", 0.0), px, "DASHBOARD", eq)
