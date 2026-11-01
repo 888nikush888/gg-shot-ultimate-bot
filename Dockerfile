@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.15-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 TZ=UTC PIP_NO_CACHE_DIR=1
 RUN apt-get update && apt-get install -y --no-install-recommends tzdata=2026e-0+deb13u1 ca-certificates=20250419+deb13u1 && rm -rf /var/lib/apt/lists/* \
  && useradd -m -u 10001 botuser
